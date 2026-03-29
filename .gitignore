@@ -1,0 +1,16 @@
+# Maven
+target/
+*.log
+
+# IDE
+.classpath
+.project
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+
+# Wrapper
+mvnw
+mvnw.cmd
