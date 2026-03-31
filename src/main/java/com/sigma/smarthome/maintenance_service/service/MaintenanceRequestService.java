@@ -2,6 +2,7 @@ package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ public class MaintenanceRequestService {
         this.propertyServiceClient = propertyServiceClient;
     }
 
-    public MaintenanceRequest createRequest(CreateMaintenanceRequestDto dto) {
+    public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
         propertyServiceClient.validatePropertyExists(dto.getPropertyId());
 
         MaintenanceRequest request = new MaintenanceRequest();
@@ -28,6 +29,19 @@ public class MaintenanceRequestService {
         request.setPriority(dto.getPriority());
         request.setStatus("OPEN");
 
-        return maintenanceRequestRepository.save(request);
+        MaintenanceRequest saved = maintenanceRequestRepository.save(request);
+
+        return new MaintenanceRequestResponse(
+                saved.getId(),
+                saved.getPropertyId(),
+                saved.getCreatedByUserId(),
+                saved.getAssignedStaffId(),
+                saved.getDescription(),
+                saved.getPriority(),
+                saved.getStatus(),
+                saved.getCreatedAt(),
+                saved.getUpdatedAt(),
+                saved.getCompletedAt()
+        );
     }
 }
