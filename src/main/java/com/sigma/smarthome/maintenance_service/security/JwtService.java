@@ -16,7 +16,6 @@ public class JwtService {
 
     public JwtService(@Value("${app.jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
-        System.out.println("JWT SECRET LOADED LENGTH = " + secret.length());
     }
 
     public Claims parseClaims(String token) {
@@ -25,5 +24,22 @@ public class JwtService {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public String extractSubject(String token) {
+        return parseClaims(token).getSubject();
+    }
+
+    public String extractEmail(String token) {
+        return parseClaims(token).get("email", String.class);
+    }
+
+    public String extractRole(String token) {
+        return parseClaims(token).get("role", String.class);
+    }
+
+    public boolean isTokenValid(String token) {
+        parseClaims(token);
+        return true;
     }
 }
