@@ -2,6 +2,7 @@ package com.sigma.smarthome.maintenance_service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
@@ -67,7 +68,7 @@ class MaintenanceRequestServiceTest {
         when(maintenanceRequestRepository.save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class)))
                 .thenReturn(saved);
 
-        MaintenanceRequest result = maintenanceRequestService.createRequest(dto);
+        MaintenanceRequestResponse result = maintenanceRequestService.createRequest(dto);
 
         verify(propertyServiceClient).validatePropertyExists(propertyId);
         verify(maintenanceRequestRepository).save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class));
@@ -137,5 +138,20 @@ class MaintenanceRequestServiceTest {
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
         verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void createRequest_ShouldThrowException_WhenPropertyDoesNotExist() {
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Property not found: " + propertyId))
+                .when(propertyServiceClient).validatePropertyExists(propertyId);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> maintenanceRequestService.createRequest(dto));
     }
 }
