@@ -1,7 +1,6 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
-import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.service.MaintenanceRequestService;
@@ -10,8 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.UUID;
 
@@ -26,9 +26,9 @@ public class MaintenanceRequestController {
     }
 
     @PostMapping
-    public ResponseEntity<MaintenanceRequestResponse> createRequest(
+    public ResponseEntity<MaintenanceRequest> createRequest(
             @Valid @RequestBody CreateMaintenanceRequestDto dto) {
-        MaintenanceRequestResponse created = maintenanceRequestService.createRequest(dto);
+        MaintenanceRequest created = maintenanceRequestService.createRequest(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
