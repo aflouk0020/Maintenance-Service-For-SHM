@@ -5,8 +5,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,8 +16,6 @@ import java.util.List;
 
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
-
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
 
     private final JwtService jwtService;
 
@@ -47,10 +43,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             String subject = claims.getSubject();
             String role = claims.get("role", String.class);
-            String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+
+            System.out.println("JWT SUBJECT = " + subject);
+            System.out.println("JWT ROLE = " + role);
 
             if (subject != null && role != null
                     && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -60,14 +60,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT authenticated user: {} with role: {}", subject, authority);
             }
 
         } catch (Exception ex) {
-            log.warn("JWT authentication failed: {}", ex.getMessage());
+            System.out.println("JWT FILTER ERROR:");
+            ex.printStackTrace();
             SecurityContextHolder.clearContext();
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid token");
-            return;
         }
 
         filterChain.doFilter(request, response);
