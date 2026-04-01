@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f8b2566c-6ace-46c4-a9d3-8ba52be37841" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/dto/MaintenanceRequestResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/config/SecurityConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,15 +72,7 @@
       <recent name="com.sigma.smarthome.maintenance_service.security" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.All in maintenance-service (4)">
-    <configuration name="All in maintenance-service (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="maintenance-service" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="TEST_OBJECT" value="package" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="JUnit.All in maintenance-service">
     <configuration name="All in maintenance-service (2)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
@@ -113,13 +105,27 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="MaintenanceServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
+      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
+      <module name="maintenance-service" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sigma.smarthome.maintenance_service.MaintenanceServiceApplication" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.sigma.smarthome.maintenance_service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.All in maintenance-service" />
+        <item itemvalue="Spring Boot.MaintenanceServiceApplication" />
         <item itemvalue="JUnit.All in maintenance-service (4)" />
         <item itemvalue="JUnit.All in maintenance-service (3)" />
         <item itemvalue="JUnit.All in maintenance-service (2)" />
-        <item itemvalue="JUnit.All in maintenance-service (1)" />
-        <item itemvalue="JUnit.All in maintenance-service" />
       </list>
     </recent_temporary>
   </component>

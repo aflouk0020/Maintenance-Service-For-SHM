@@ -50,4 +50,10 @@ public class MaintenanceRequestController {
 
         return ResponseEntity.ok(updated);
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<MaintenanceRequestResponse> getRequestById(@PathVariable UUID id){
+        MaintenanceRequestResponse response = maintenanceRequestService.getRequestById(id);
+        return ResponseEntity.ok(response);
+    }
 }

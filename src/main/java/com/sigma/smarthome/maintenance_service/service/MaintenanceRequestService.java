@@ -79,4 +79,22 @@ public class MaintenanceRequestService {
 
         return maintenanceRequestRepository.save(request);
     }
+
+    public MaintenanceRequestResponse getRequestById(UUID id){
+        MaintenanceRequest request = maintenanceRequestRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Maintenance request not found: " +id));
+
+        return new MaintenanceRequestResponse(
+                request.getId(),
+                request.getPropertyId(),
+                request.getCreatedByUserId(),
+                request.getAssignedStaffId(),
+                request.getDescription(),
+                request.getPriority(),
+                request.getStatus(),
+                request.getCreatedAt(),
+                request.getUpdatedAt(),
+                request.getCompletedAt()
+        );
+    }
 }
