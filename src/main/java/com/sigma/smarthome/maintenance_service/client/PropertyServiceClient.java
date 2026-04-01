@@ -2,12 +2,16 @@ package com.sigma.smarthome.maintenance_service.client;
 
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
+
+
 
 @Component
 public class PropertyServiceClient {
@@ -36,5 +40,24 @@ public class PropertyServiceClient {
         } catch (Exception ex) {
             throw new RuntimeException("Property Service unavailable: " + ex.getMessage());
         }
+    }
+    
+    
+    public List<UUID> getPropertyIdsManagedBy(UUID managerId, String bearerToken) {
+        String url = propertyServiceBaseUrl + "/api/v1/properties/manager/" + managerId;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(bearerToken.replace("Bearer ", ""));
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<UUID[]> response = restTemplate.exchange(
+                url,
+                HttpMethod.GET,
+                entity,
+                UUID[].class
+        );
+
+        UUID[] body = response.getBody();
+        return body == null ? List.of() : Arrays.asList(body);
     }
 }

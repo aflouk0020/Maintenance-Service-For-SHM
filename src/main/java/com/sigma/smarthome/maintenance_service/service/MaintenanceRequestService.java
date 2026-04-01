@@ -2,6 +2,7 @@ package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
@@ -9,6 +10,7 @@ import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepo
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,19 +28,42 @@ public class MaintenanceRequestService {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
     }
+    
+    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
+        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
 
-    public MaintenanceRequest createRequest(CreateMaintenanceRequestDto dto) {
+        if (propertyIds.isEmpty()) {
+            return List.of();
+        }
+
+        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
+    }
+
+    public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
         propertyServiceClient.validatePropertyExists(dto.getPropertyId());
 
         MaintenanceRequest request = new MaintenanceRequest();
         request.setPropertyId(dto.getPropertyId());
         request.setCreatedByUserId(dto.getCreatedByUserId());
-        request.setAssignedStaffId(dto.getCreatedByUserId()); // for Story 3.3 local validation
+        request.setAssignedStaffId(dto.getCreatedByUserId());
         request.setDescription(dto.getDescription());
         request.setPriority(dto.getPriority());
         request.setStatus("OPEN");
 
-        return maintenanceRequestRepository.save(request);
+        MaintenanceRequest saved = maintenanceRequestRepository.save(request);
+
+        return new MaintenanceRequestResponse(
+                saved.getId(),
+                saved.getPropertyId(),
+                saved.getCreatedByUserId(),
+                saved.getAssignedStaffId(),
+                saved.getDescription(),
+                saved.getPriority(),
+                saved.getStatus(),
+                saved.getCreatedAt(),
+                saved.getUpdatedAt(),
+                saved.getCompletedAt()
+        );
     }
 
     public MaintenanceRequest updateStatus(UUID requestId, UUID loggedInUserId, String newStatus) {
