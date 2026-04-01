@@ -1,5 +1,7 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
+import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
@@ -117,5 +119,54 @@ class MaintenanceRequestControllerTest {
         );
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
+
+    @Test
+    void createRequest_ShouldReturn201_WhenValidRequest() {
+        UUID propertyId = UUID.randomUUID();
+        UUID createdByUserId = UUID.randomUUID();
+
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        MaintenanceRequestResponse response = new MaintenanceRequestResponse(
+                UUID.randomUUID(), propertyId, createdByUserId,
+                null, "Leaking pipe", "HIGH", "OPEN",
+                null, null, null
+        );
+
+        when(maintenanceRequestService.createRequest(dto)).thenReturn(response);
+
+        ResponseEntity<MaintenanceRequestResponse> result =
+                maintenanceRequestController.createRequest(dto);
+
+        assertEquals(HttpStatus.CREATED, result.getStatusCode());
+        assertEquals("OPEN", result.getBody().getStatus());
+        assertEquals(propertyId, result.getBody().getPropertyId());
+    }
+
+    @Test
+    void createRequest_ShouldThrowNotFound_WhenPropertyDoesNotExist() {
+        UUID propertyId = UUID.randomUUID();
+        UUID createdByUserId = UUID.randomUUID();
+
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        when(maintenanceRequestService.createRequest(dto))
+                .thenThrow(new ResourceNotFoundException("Property not found: " + propertyId));
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestController.createRequest(dto)
+        );
+
+        assertEquals("Property not found: " + propertyId, ex.getMessage());
     }
 }
