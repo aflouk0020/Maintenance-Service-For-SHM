@@ -1,4 +1,4 @@
-package com.sigma.smarthome.maintenance_service;
+package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
@@ -7,8 +7,6 @@ import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
-import com.sigma.smarthome.maintenance_service.service.MaintenanceRequestService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
@@ -40,13 +40,16 @@ class MaintenanceRequestServiceTest {
     private UUID propertyId;
     private UUID createdByUserId;
     private UUID requestId;
+    private UUID managerId;
 
     @BeforeEach
     void setUp() {
         propertyId = UUID.randomUUID();
         createdByUserId = UUID.randomUUID();
         requestId = UUID.randomUUID();
+        managerId = UUID.randomUUID();
     }
+    
 
     @Test
     void createRequest_ShouldValidatePropertyAndSaveRequest() {
@@ -153,5 +156,77 @@ class MaintenanceRequestServiceTest {
 
         assertThrows(ResourceNotFoundException.class,
                 () -> maintenanceRequestService.createRequest(dto));
+    }
+    
+    
+    @Test
+    void getRequestsForManager_ShouldReturnRequests_WhenManagerHasProperties() {
+        UUID propertyId1 = UUID.randomUUID();
+        UUID propertyId2 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+
+        MaintenanceRequest request2 = new MaintenanceRequest();
+        request2.setId(UUID.randomUUID());
+        request2.setPropertyId(propertyId2);
+        request2.setStatus("IN_PROGRESS");
+
+        List<UUID> propertyIds = List.of(propertyId1, propertyId2);
+        List<MaintenanceRequest> requests = List.of(request1, request2);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdIn(propertyIds))
+                .thenReturn(requests);
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(propertyId1, result.get(0).getPropertyId());
+        assertEquals(propertyId2, result.get(1).getPropertyId());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdIn(propertyIds);
+    }
+
+    @Test
+    void getRequestsForManager_ShouldReturnEmptyList_WhenManagerHasNoProperties() {
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(List.of());
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).findByPropertyIdIn(org.mockito.ArgumentMatchers.anyList());
+    }
+
+    @Test
+    void getRequestsForManager_ShouldReturnEmptyList_WhenNoRequestsExistForManagedProperties() {
+        List<UUID> propertyIds = List.of(UUID.randomUUID(), UUID.randomUUID());
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdIn(propertyIds))
+                .thenReturn(List.of());
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdIn(propertyIds);
     }
 }

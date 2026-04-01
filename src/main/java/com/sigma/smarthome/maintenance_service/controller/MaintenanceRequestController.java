@@ -1,6 +1,7 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.service.MaintenanceRequestService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -26,11 +28,27 @@ public class MaintenanceRequestController {
     }
 
     @PostMapping
-    public ResponseEntity<MaintenanceRequest> createRequest(
+    public ResponseEntity<MaintenanceRequestResponse> createRequest(
             @Valid @RequestBody CreateMaintenanceRequestDto dto) {
-        MaintenanceRequest created = maintenanceRequestService.createRequest(dto);
+        MaintenanceRequestResponse created = maintenanceRequestService.createRequest(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
+    
+    @GetMapping
+    @PreAuthorize("hasRole('PROPERTY_MANAGER')")
+    public ResponseEntity<List<MaintenanceRequest>> getRequestsForManager(
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UUID managerId = UUID.fromString(authentication.getName());
+
+        List<MaintenanceRequest> requests =
+                maintenanceRequestService.getRequestsForManager(managerId, authorizationHeader);
+
+        return ResponseEntity.ok(requests);
+    }
+    
+    
 
     @PreAuthorize("hasRole('MAINTENANCE_STAFF')")
     @PutMapping("/{id}/status")
