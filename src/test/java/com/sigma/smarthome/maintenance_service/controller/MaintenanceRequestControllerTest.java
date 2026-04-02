@@ -169,4 +169,41 @@ class MaintenanceRequestControllerTest {
 
         assertEquals("Property not found: " + propertyId, ex.getMessage());
     }
+
+    @Test
+    void getRequestById_ShouldReturn200_WhenRequestExists() {
+        UUID requestId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        UUID createdByUserId = UUID.randomUUID();
+
+        MaintenanceRequestResponse response = new MaintenanceRequestResponse(
+                requestId, propertyId, createdByUserId,
+                null, "Broken boiler", "HIGH", "OPEN",
+                null, null, null
+        );
+
+        when(maintenanceRequestService.getRequestById(requestId)).thenReturn(response);
+
+        ResponseEntity<MaintenanceRequestResponse> result =
+                maintenanceRequestController.getRequestById(requestId);
+
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertEquals(requestId, result.getBody().getId());
+        assertEquals("OPEN", result.getBody().getStatus());
+    }
+
+    @Test
+    void getRequestById_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        UUID requestId = UUID.randomUUID();
+
+        when(maintenanceRequestService.getRequestById(requestId))
+                .thenThrow(new ResourceNotFoundException("Maintenance request not found: " + requestId));
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestController.getRequestById(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
 }
