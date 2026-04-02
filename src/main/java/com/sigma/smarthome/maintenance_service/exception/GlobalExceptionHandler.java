@@ -18,10 +18,10 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
-//    @ExceptionHandler(ForbiddenOperationException.class)
-//    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenOperationException ex) {
-//        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
-//    }
+    @ExceptionHandler(ForbiddenOperationException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenOperationException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
@@ -49,15 +49,5 @@ public class GlobalExceptionHandler {
         body.put("error", status.getReasonPhrase());
         body.put("message", message);
         return ResponseEntity.status(status).body(body);
-    }
-    
-    @ExceptionHandler(ForbiddenOperationException.class)
-    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenOperationException ex) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", LocalDateTime.now());
-        body.put("status", HttpStatus.FORBIDDEN.value());
-        body.put("error", "Forbidden");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
     }
 }

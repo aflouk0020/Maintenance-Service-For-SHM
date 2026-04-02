@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +33,22 @@ public class MaintenanceRequestController {
         MaintenanceRequestResponse created = maintenanceRequestService.createRequest(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
+    
+    @GetMapping
+    @PreAuthorize("hasRole('PROPERTY_MANAGER')")
+    public ResponseEntity<List<MaintenanceRequest>> getRequestsForManager(
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UUID managerId = UUID.fromString(authentication.getName());
+
+        List<MaintenanceRequest> requests =
+                maintenanceRequestService.getRequestsForManager(managerId, authorizationHeader);
+
+        return ResponseEntity.ok(requests);
+    }
+    
+    
 
     @PreAuthorize("hasRole('MAINTENANCE_STAFF')")
     @PutMapping("/{id}/status")

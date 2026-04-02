@@ -16,9 +16,15 @@ public class MaintenanceRequestResponse {
     private LocalDateTime updatedAt;
     private LocalDateTime completedAt;
 
-    public MaintenanceRequestResponse(UUID id, UUID propertyId, UUID createdByUserId,
-                                      UUID assignedStaffId, String description, String priority,
-                                      String status, LocalDateTime createdAt, LocalDateTime updatedAt,
+    public MaintenanceRequestResponse(UUID id,
+                                      UUID propertyId,
+                                      UUID createdByUserId,
+                                      UUID assignedStaffId,
+                                      String description,
+                                      String priority,
+                                      String status,
+                                      LocalDateTime createdAt,
+                                      LocalDateTime updatedAt,
                                       LocalDateTime completedAt) {
         this.id = id;
         this.propertyId = propertyId;
@@ -32,14 +38,43 @@ public class MaintenanceRequestResponse {
         this.completedAt = completedAt;
     }
 
-    public UUID getId() { return id; }
-    public UUID getPropertyId() { return propertyId; }
-    public UUID getCreatedByUserId() { return createdByUserId; }
-    public UUID getAssignedStaffId() { return assignedStaffId; }
-    public String getDescription() { return description; }
-    public String getPriority() { return priority; }
-    public String getStatus() { return status; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public LocalDateTime getCompletedAt() { return completedAt; }
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getPropertyId() {
+        return propertyId;
+    }
+
+    public UUID getCreatedByUserId() {
+        return createdByUserId;
+    }
+
+    public UUID getAssignedStaffId() {
+        return assignedStaffId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getPriority() {
+        return priority;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public LocalDateTime getCompletedAt() {
+        return completedAt;
+    }
 }

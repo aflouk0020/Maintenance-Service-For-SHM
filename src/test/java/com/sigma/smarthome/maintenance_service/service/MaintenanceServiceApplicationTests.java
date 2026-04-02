@@ -1,4 +1,4 @@
-package com.sigma.smarthome.maintenance_service;
+package com.sigma.smarthome.maintenance_service.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -10,6 +10,7 @@ import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepo
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -26,6 +27,16 @@ public class MaintenanceRequestService {
                                      PropertyServiceClient propertyServiceClient) {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
+    }
+
+    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
+        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
+
+        if (propertyIds.isEmpty()) {
+            return List.of();
+        }
+
+        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
     }
 
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
@@ -80,9 +91,9 @@ public class MaintenanceRequestService {
         return maintenanceRequestRepository.save(request);
     }
 
-    public MaintenanceRequestResponse getRequestById(UUID id){
-        MaintenanceRequest request = maintenanceRequestRepository.findById(id).
-                orElseThrow(() -> new ResourceNotFoundException("Maintenance request not found: " +id));
+    public MaintenanceRequestResponse getRequestById(UUID id) {
+        MaintenanceRequest request = maintenanceRequestRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Maintenance request not found: " + id));
 
         return new MaintenanceRequestResponse(
                 request.getId(),

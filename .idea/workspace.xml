@@ -5,10 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f8b2566c-6ace-46c4-a9d3-8ba52be37841" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestControllerManagerOverviewTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/repository/MaintenanceRequestRepositoryTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/client/PropertyServiceClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/client/PropertyServiceClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/config/SecurityConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/config/SecurityConfig.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/dto/MaintenanceRequestResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/dto/MaintenanceRequestResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/repository/MaintenanceRequestRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/repository/MaintenanceRequestRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/MaintenanceRequestServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/MaintenanceServiceApplicationTests.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/MaintenanceServiceApplicationTests.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +71,7 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "Spring Boot.MaintenanceServiceApplication.executor": "Run",
-    "git-widget-placeholder": "feature/SMPM-20-required-fields-traceability",
+    "git-widget-placeholder": "Merging feature/SMPM-20-required-fields-traceability",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true"
   }
@@ -72,8 +81,8 @@
       <recent name="com.sigma.smarthome.maintenance_service.security" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.All in maintenance-service">
-    <configuration name="All in maintenance-service (2)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+  <component name="RunManager" selected="JUnit.All in maintenance-service (1)">
+    <configuration name="All in maintenance-service (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
       <option name="TEST_OBJECT" value="package" />
@@ -121,11 +130,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.All in maintenance-service (1)" />
         <item itemvalue="JUnit.All in maintenance-service" />
         <item itemvalue="Spring Boot.MaintenanceServiceApplication" />
         <item itemvalue="JUnit.All in maintenance-service (4)" />
         <item itemvalue="JUnit.All in maintenance-service (3)" />
-        <item itemvalue="JUnit.All in maintenance-service (2)" />
       </list>
     </recent_temporary>
   </component>
