@@ -229,4 +229,36 @@ class MaintenanceRequestServiceTest {
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
         verify(maintenanceRequestRepository).findByPropertyIdIn(propertyIds);
     }
+
+    @Test
+    void getRequestById_ShouldReturnResponse_WhenRequestExists() {
+        MaintenanceRequest request = new MaintenanceRequest();
+        request.setId(requestId);
+        request.setPropertyId(propertyId);
+        request.setCreatedByUserId(createdByUserId);
+        request.setDescription("Broken boiler");
+        request.setPriority("HIGH");
+        request.setStatus("OPEN");
+
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        MaintenanceRequestResponse result = maintenanceRequestService.getRequestById(requestId);
+
+        assertNotNull(result);
+        assertEquals(requestId, result.getId());
+        assertEquals("OPEN", result.getStatus());
+        verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void getRequestById_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestService.getRequestById(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
 }
