@@ -3,11 +3,15 @@ package com.sigma.smarthome.maintenance_service.service;
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.springframework.stereotype.Service;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
+import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,11 +26,14 @@ public class MaintenanceRequestService {
 
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final PropertyServiceClient propertyServiceClient;
+    private final MaintenanceHistoryRepository maintenanceHistoryRepository;
 
     public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
-                                     PropertyServiceClient propertyServiceClient) {
+                                     PropertyServiceClient propertyServiceClient,
+                                     MaintenanceHistoryRepository maintenanceHistoryRepository) {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
+        this.maintenanceHistoryRepository = maintenanceHistoryRepository;
     }
 
     public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
@@ -39,6 +46,24 @@ public class MaintenanceRequestService {
         return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
     }
 
+    public List<MaintenanceHistoryResponse> getRequestHistory(UUID requestId) {
+        if (!maintenanceRequestRepository.existsById(requestId)) {
+            throw new ResourceNotFoundException("Maintenance request not found: " + requestId);
+        }
+
+        return maintenanceHistoryRepository.findByRequestIdOrderByChangedAtAsc(requestId)
+                .stream()
+                .map(history -> new MaintenanceHistoryResponse(
+                        history.getId(),
+                        history.getRequestId(),
+                        history.getOldStatus(),
+                        history.getNewStatus(),
+                        history.getChangedByUserId(),
+                        history.getChangedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+    
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
         propertyServiceClient.validatePropertyExists(dto.getPropertyId());
 
@@ -82,13 +107,25 @@ public class MaintenanceRequestService {
             throw new IllegalArgumentException("Invalid status: " + newStatus);
         }
 
+        String oldStatus = request.getStatus();
+
         request.setStatus(normalizedStatus);
 
         if ("COMPLETED".equals(normalizedStatus)) {
             request.setCompletedAt(LocalDateTime.now());
         }
 
-        return maintenanceRequestRepository.save(request);
+        MaintenanceRequest savedRequest = maintenanceRequestRepository.save(request);
+
+        MaintenanceHistory history = new MaintenanceHistory();
+        history.setRequestId(savedRequest.getId());
+        history.setOldStatus(oldStatus);
+        history.setNewStatus(normalizedStatus);
+        history.setChangedByUserId(loggedInUserId);
+
+        maintenanceHistoryRepository.save(history);
+
+        return savedRequest;
     }
 
     public MaintenanceRequestResponse getRequestById(UUID id) {
