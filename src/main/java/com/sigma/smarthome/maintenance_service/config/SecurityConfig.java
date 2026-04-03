@@ -35,12 +35,22 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-requests/**")
+
+                        .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-requests")
                         .hasAnyRole("PROPERTY_MANAGER", "MAINTENANCE_STAFF")
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/maintenance-requests")
                         .hasRole("PROPERTY_MANAGER")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/maintenance-requests/*/assign")
+                        .hasRole("PROPERTY_MANAGER")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/maintenance-requests/*/status")
+                        .hasRole("MAINTENANCE_STAFF")
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/maintenance-requests/**")
                         .hasAnyRole("PROPERTY_MANAGER", "MAINTENANCE_STAFF")
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
