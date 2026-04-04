@@ -260,4 +260,19 @@ class MaintenanceRequestControllerTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
     }
+    
+    @Test
+    void getRequestHistory_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        UUID requestId = UUID.randomUUID();
+
+        when(maintenanceRequestService.getRequestHistory(requestId))
+                .thenThrow(new ResourceNotFoundException("Maintenance request not found: " + requestId));
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestController.getRequestHistory(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
 }

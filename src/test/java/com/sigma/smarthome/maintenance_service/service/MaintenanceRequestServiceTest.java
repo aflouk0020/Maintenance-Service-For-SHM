@@ -14,6 +14,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -41,6 +44,9 @@ class MaintenanceRequestServiceTest {
     @InjectMocks
     private MaintenanceRequestService maintenanceRequestService;
 
+    @Mock
+    private MaintenanceHistoryRepository maintenanceHistoryRepository;
+    
     private UUID propertyId;
     private UUID createdByUserId;
     private UUID requestId;
