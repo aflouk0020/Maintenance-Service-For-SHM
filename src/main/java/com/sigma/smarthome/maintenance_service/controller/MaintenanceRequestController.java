@@ -7,6 +7,7 @@ import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.service.MaintenanceRequestService;
 import jakarta.validation.Valid;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -83,5 +84,11 @@ public class MaintenanceRequestController {
     public ResponseEntity<MaintenanceRequestResponse> getRequestById(@PathVariable UUID id) {
         MaintenanceRequestResponse response = maintenanceRequestService.getRequestById(id);
         return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{id}/history")
+    public ResponseEntity<List<MaintenanceHistoryResponse>> getRequestHistory(@PathVariable UUID id) {
+        List<MaintenanceHistoryResponse> history = maintenanceRequestService.getRequestHistory(id);
+        return ResponseEntity.ok(history);
     }
 }

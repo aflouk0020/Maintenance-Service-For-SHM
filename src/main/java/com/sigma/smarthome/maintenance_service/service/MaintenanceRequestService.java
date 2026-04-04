@@ -3,10 +3,13 @@ package com.sigma.smarthome.maintenance_service.service;
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +17,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class MaintenanceRequestService {
@@ -24,13 +28,16 @@ public class MaintenanceRequestService {
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final PropertyServiceClient propertyServiceClient;
     private final UserServiceClient userServiceClient;
+    private final MaintenanceHistoryRepository maintenanceHistoryRepository;
 
     public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
                                      PropertyServiceClient propertyServiceClient,
-                                     UserServiceClient userServiceClient) {
+                                     UserServiceClient userServiceClient,
+                                     MaintenanceHistoryRepository maintenanceHistoryRepository) {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
         this.userServiceClient = userServiceClient;
+        this.maintenanceHistoryRepository = maintenanceHistoryRepository;
     }
 
     public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
@@ -41,6 +48,33 @@ public class MaintenanceRequestService {
         }
 
         return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
+    }
+
+    public List<MaintenanceHistoryResponse> getRequestHistory(UUID requestId) {
+        if (!maintenanceRequestRepository.existsById(requestId)) {
+            throw new ResourceNotFoundException("Maintenance request not found: " + requestId);
+        }
+
+        return maintenanceHistoryRepository.findByRequestIdOrderByChangedAtAsc(requestId)
+                .stream()
+                .map(history -> new MaintenanceHistoryResponse(
+                        history.getId(),
+                        history.getRequestId(),
+                        history.getOldStatus(),
+                        history.getNewStatus(),
+                        history.getChangedByUserId(),
+                        history.getChangedAt()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    private boolean isValidTransition(String oldStatus, String newStatus) {
+        return switch (oldStatus) {
+            case "OPEN" -> "IN_PROGRESS".equals(newStatus);
+            case "IN_PROGRESS" -> "COMPLETED".equals(newStatus);
+            case "COMPLETED" -> false;
+            default -> false;
+        };
     }
 
     public MaintenanceRequest assignStaff(UUID requestId, UUID staffId, String bearerToken) {
@@ -96,13 +130,31 @@ public class MaintenanceRequestService {
             throw new IllegalArgumentException("Invalid status: " + newStatus);
         }
 
+        String oldStatus = request.getStatus();
+
+        if (!isValidTransition(oldStatus, normalizedStatus)) {
+            throw new IllegalArgumentException(
+                    "Invalid status transition: " + oldStatus + " -> " + normalizedStatus
+            );
+        }
+
         request.setStatus(normalizedStatus);
 
         if ("COMPLETED".equals(normalizedStatus)) {
             request.setCompletedAt(LocalDateTime.now());
         }
 
-        return maintenanceRequestRepository.save(request);
+        MaintenanceRequest savedRequest = maintenanceRequestRepository.save(request);
+
+        MaintenanceHistory history = new MaintenanceHistory();
+        history.setRequestId(savedRequest.getId());
+        history.setOldStatus(oldStatus);
+        history.setNewStatus(normalizedStatus);
+        history.setChangedByUserId(loggedInUserId);
+
+        maintenanceHistoryRepository.save(history);
+
+        return savedRequest;
     }
 
     public MaintenanceRequestResponse getRequestById(UUID id) {
