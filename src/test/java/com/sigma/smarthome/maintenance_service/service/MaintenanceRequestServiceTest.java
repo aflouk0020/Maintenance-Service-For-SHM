@@ -7,6 +7,7 @@ import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
 
+	@Mock
+	private MaintenanceHistoryRepository maintenanceHistoryRepository;
+	
     @Mock
     private MaintenanceRequestRepository maintenanceRequestRepository;
 
