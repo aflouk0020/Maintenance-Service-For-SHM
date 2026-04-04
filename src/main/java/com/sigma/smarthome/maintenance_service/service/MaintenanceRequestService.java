@@ -2,6 +2,7 @@ package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
@@ -10,13 +11,12 @@ import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundExcepti
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.springframework.stereotype.Service;
-import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
-import java.util.stream.Collectors;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class MaintenanceRequestService {
@@ -63,7 +63,16 @@ public class MaintenanceRequestService {
                 ))
                 .collect(Collectors.toList());
     }
-    
+
+    private boolean isValidTransition(String oldStatus, String newStatus) {
+        return switch (oldStatus) {
+            case "OPEN" -> "IN_PROGRESS".equals(newStatus);
+            case "IN_PROGRESS" -> "COMPLETED".equals(newStatus);
+            case "COMPLETED" -> false;
+            default -> false;
+        };
+    }
+
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
         propertyServiceClient.validatePropertyExists(dto.getPropertyId());
 
@@ -108,6 +117,12 @@ public class MaintenanceRequestService {
         }
 
         String oldStatus = request.getStatus();
+
+        if (!isValidTransition(oldStatus, normalizedStatus)) {
+            throw new IllegalArgumentException(
+                    "Invalid status transition: " + oldStatus + " -> " + normalizedStatus
+            );
+        }
 
         request.setStatus(normalizedStatus);
 
