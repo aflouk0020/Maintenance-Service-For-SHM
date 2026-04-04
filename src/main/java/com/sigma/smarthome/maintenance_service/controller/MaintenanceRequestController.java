@@ -1,5 +1,6 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
+import com.sigma.smarthome.maintenance_service.dto.AssignStaffDto;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
@@ -10,9 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,7 +33,7 @@ public class MaintenanceRequestController {
         MaintenanceRequestResponse created = maintenanceRequestService.createRequest(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
-    
+
     @GetMapping
     @PreAuthorize("hasRole('PROPERTY_MANAGER')")
     public ResponseEntity<List<MaintenanceRequest>> getRequestsForManager(
@@ -47,11 +47,22 @@ public class MaintenanceRequestController {
 
         return ResponseEntity.ok(requests);
     }
-    
-    
 
-    @PreAuthorize("hasRole('MAINTENANCE_STAFF')")
+    @PutMapping("/{id}/assign")
+    @PreAuthorize("hasRole('PROPERTY_MANAGER')")
+    public ResponseEntity<MaintenanceRequest> assignStaff(
+            @PathVariable UUID id,
+            @Valid @RequestBody AssignStaffDto dto,
+            @RequestHeader("Authorization") String authorizationHeader
+    ) {
+        MaintenanceRequest updated =
+                maintenanceRequestService.assignStaff(id, dto.getStaffId(), authorizationHeader);
+
+        return ResponseEntity.ok(updated);
+    }
+
     @PutMapping("/{id}/status")
+    @PreAuthorize("hasRole('MAINTENANCE_STAFF')")
     public ResponseEntity<MaintenanceRequest> updateStatus(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateMaintenanceStatusDto dto
@@ -69,7 +80,7 @@ public class MaintenanceRequestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<MaintenanceRequestResponse> getRequestById(@PathVariable UUID id){
+    public ResponseEntity<MaintenanceRequestResponse> getRequestById(@PathVariable UUID id) {
         MaintenanceRequestResponse response = maintenanceRequestService.getRequestById(id);
         return ResponseEntity.ok(response);
     }
