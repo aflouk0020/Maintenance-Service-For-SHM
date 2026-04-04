@@ -1,6 +1,7 @@
 package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
+import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
@@ -34,6 +35,9 @@ class MaintenanceRequestServiceTest {
     @Mock
     private PropertyServiceClient propertyServiceClient;
 
+    @Mock
+    private UserServiceClient userServiceClient;
+    
     @InjectMocks
     private MaintenanceRequestService maintenanceRequestService;
 
@@ -41,6 +45,8 @@ class MaintenanceRequestServiceTest {
     private UUID createdByUserId;
     private UUID requestId;
     private UUID managerId;
+    private UUID staffId;
+    private String bearerToken;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +54,8 @@ class MaintenanceRequestServiceTest {
         createdByUserId = UUID.randomUUID();
         requestId = UUID.randomUUID();
         managerId = UUID.randomUUID();
+        staffId = UUID.randomUUID();
+        bearerToken = "Bearer test-token";
     }
     
 
@@ -260,5 +268,63 @@ class MaintenanceRequestServiceTest {
         );
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
+    
+    @Test
+    void assignStaff_ShouldUpdateAssignedStaffId_WhenRequestExistsAndUserIsMaintenanceStaff() {
+        MaintenanceRequest existing = new MaintenanceRequest();
+        existing.setId(requestId);
+        existing.setPropertyId(propertyId);
+        existing.setCreatedByUserId(managerId);
+        existing.setAssignedStaffId(managerId);
+        existing.setDescription("Boiler not working");
+        existing.setPriority("HIGH");
+        existing.setStatus("OPEN");
+
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
+        when(maintenanceRequestRepository.save(existing)).thenReturn(existing);
+
+        MaintenanceRequest result =
+                maintenanceRequestService.assignStaff(requestId, staffId, bearerToken);
+
+        assertNotNull(result);
+        assertEquals(staffId, result.getAssignedStaffId());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository).findById(requestId);
+        verify(maintenanceRequestRepository).save(existing);
+    }
+
+    @Test
+    void assignStaff_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void assignStaff_ShouldThrowForbidden_WhenSelectedUserIsNotMaintenanceStaff() {
+        org.mockito.Mockito.doThrow(
+                new ForbiddenOperationException("Only MAINTENANCE_STAFF users can be assigned"))
+                .when(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+
+        ForbiddenOperationException ex = assertThrows(
+                ForbiddenOperationException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("Only MAINTENANCE_STAFF users can be assigned", ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).findById(org.mockito.ArgumentMatchers.any());
+        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
     }
 }

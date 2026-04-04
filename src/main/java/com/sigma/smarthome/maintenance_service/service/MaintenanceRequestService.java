@@ -1,6 +1,7 @@
 package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
+import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
@@ -26,13 +27,16 @@ public class MaintenanceRequestService {
 
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final PropertyServiceClient propertyServiceClient;
+    private final UserServiceClient userServiceClient;
     private final MaintenanceHistoryRepository maintenanceHistoryRepository;
 
     public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
                                      PropertyServiceClient propertyServiceClient,
+                                     UserServiceClient userServiceClient,
                                      MaintenanceHistoryRepository maintenanceHistoryRepository) {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
+        this.userServiceClient = userServiceClient;
         this.maintenanceHistoryRepository = maintenanceHistoryRepository;
     }
 
@@ -73,6 +77,17 @@ public class MaintenanceRequestService {
         };
     }
 
+    public MaintenanceRequest assignStaff(UUID requestId, UUID staffId, String bearerToken) {
+        userServiceClient.validateMaintenanceStaff(staffId, bearerToken);
+
+        MaintenanceRequest request = maintenanceRequestRepository.findById(requestId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Maintenance request not found: " + requestId));
+
+        request.setAssignedStaffId(staffId);
+        return maintenanceRequestRepository.save(request);
+    }
+
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
         propertyServiceClient.validatePropertyExists(dto.getPropertyId());
 
@@ -106,8 +121,7 @@ public class MaintenanceRequestService {
                         new ResourceNotFoundException("Maintenance request not found: " + requestId));
 
         if (request.getAssignedStaffId() == null || !request.getAssignedStaffId().equals(loggedInUserId)) {
-            throw new ForbiddenOperationException(
-                    "You are not allowed to update this maintenance request");
+            throw new ForbiddenOperationException("You are not allowed to update this maintenance request");
         }
 
         String normalizedStatus = newStatus.trim().toUpperCase();
