@@ -34,7 +34,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-requests")
                         .hasAnyRole("PROPERTY_MANAGER", "MAINTENANCE_STAFF")
