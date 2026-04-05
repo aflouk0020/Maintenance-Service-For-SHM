@@ -29,7 +29,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.sigma.smarthome.maintenance_service.client.NotificationServiceClient;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
+import com.sigma.smarthome.maintenance_service.dto.CreateNotificationDto;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
 
@@ -44,6 +50,12 @@ class MaintenanceRequestServiceTest {
 
     @Mock
     private UserServiceClient userServiceClient;
+    
+    @Mock
+    private MaintenanceHistoryRepository maintenanceHistoryRepository;
+
+    @Mock
+    private NotificationServiceClient notificationServiceClient;
     
     @InjectMocks
     private MaintenanceRequestService maintenanceRequestService;
@@ -116,7 +128,8 @@ class MaintenanceRequestServiceTest {
 
         when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
         when(maintenanceRequestRepository.save(existing)).thenReturn(updated);
-
+        when(maintenanceHistoryRepository.save(any(MaintenanceHistory.class)))
+        .thenAnswer(invocation -> invocation.getArgument(0));
         MaintenanceRequest result =
                 maintenanceRequestService.updateStatus(requestId, loggedInUserId, "IN_PROGRESS");
 
@@ -293,7 +306,8 @@ class MaintenanceRequestServiceTest {
 
         when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
         when(maintenanceRequestRepository.save(existing)).thenReturn(existing);
-
+        doNothing().when(notificationServiceClient).sendNotification(any(CreateNotificationDto.class));
+        
         MaintenanceRequest result =
                 maintenanceRequestService.assignStaff(requestId, staffId, bearerToken);
 

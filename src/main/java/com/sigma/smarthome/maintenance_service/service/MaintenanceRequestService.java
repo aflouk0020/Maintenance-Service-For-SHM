@@ -18,7 +18,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import com.sigma.smarthome.maintenance_service.client.NotificationServiceClient;
+import com.sigma.smarthome.maintenance_service.dto.CreateNotificationDto;
 @Service
 public class MaintenanceRequestService {
 
@@ -29,16 +30,19 @@ public class MaintenanceRequestService {
     private final PropertyServiceClient propertyServiceClient;
     private final UserServiceClient userServiceClient;
     private final MaintenanceHistoryRepository maintenanceHistoryRepository;
-
-    public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
-                                     PropertyServiceClient propertyServiceClient,
-                                     UserServiceClient userServiceClient,
-                                     MaintenanceHistoryRepository maintenanceHistoryRepository) {
-        this.maintenanceRequestRepository = maintenanceRequestRepository;
-        this.propertyServiceClient = propertyServiceClient;
-        this.userServiceClient = userServiceClient;
-        this.maintenanceHistoryRepository = maintenanceHistoryRepository;
-    }
+    private final NotificationServiceClient notificationServiceClient;
+    
+	    public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
+	            PropertyServiceClient propertyServiceClient,
+	            UserServiceClient userServiceClient,
+	            MaintenanceHistoryRepository maintenanceHistoryRepository,
+	            NotificationServiceClient notificationServiceClient) {
+	this.maintenanceRequestRepository = maintenanceRequestRepository;
+	this.propertyServiceClient = propertyServiceClient;
+	this.userServiceClient = userServiceClient;
+	this.maintenanceHistoryRepository = maintenanceHistoryRepository;
+	this.notificationServiceClient = notificationServiceClient;
+	}
 
     public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
         List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
@@ -85,7 +89,20 @@ public class MaintenanceRequestService {
                         new ResourceNotFoundException("Maintenance request not found: " + requestId));
 
         request.setAssignedStaffId(staffId);
-        return maintenanceRequestRepository.save(request);
+
+        MaintenanceRequest savedRequest = maintenanceRequestRepository.save(request);
+
+        CreateNotificationDto notification = new CreateNotificationDto(
+                staffId,
+                "Maintenance Request Assigned",
+                "You have been assigned to maintenance request " + savedRequest.getId(),
+                "ASSIGNMENT",
+                false
+        );
+
+        notificationServiceClient.sendNotification(notification);
+
+        return savedRequest;
     }
 
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
@@ -153,6 +170,16 @@ public class MaintenanceRequestService {
         history.setChangedByUserId(loggedInUserId);
 
         maintenanceHistoryRepository.save(history);
+
+        CreateNotificationDto notification = new CreateNotificationDto(
+                request.getCreatedByUserId(),
+                "Maintenance Request Updated",
+                "Your maintenance request " + savedRequest.getId() + " status changed to " + normalizedStatus,
+                "STATUS_UPDATE",
+                false
+        );
+
+        notificationServiceClient.sendNotification(notification);
 
         return savedRequest;
     }
