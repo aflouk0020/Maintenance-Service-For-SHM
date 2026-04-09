@@ -14,16 +14,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
@@ -49,7 +49,6 @@ class MaintenanceRequestServiceTest {
         requestId = UUID.randomUUID();
         managerId = UUID.randomUUID();
     }
-    
 
     @Test
     void createRequest_ShouldValidatePropertyAndSaveRequest() {
@@ -157,8 +156,7 @@ class MaintenanceRequestServiceTest {
         assertThrows(ResourceNotFoundException.class,
                 () -> maintenanceRequestService.createRequest(dto));
     }
-    
-    
+
     @Test
     void getRequestsForManager_ShouldReturnRequests_WhenManagerHasProperties() {
         UUID propertyId1 = UUID.randomUUID();
@@ -184,7 +182,7 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(requests);
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -201,7 +199,7 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(List.of());
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -221,12 +219,138 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(List.of());
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
         verify(maintenanceRequestRepository).findByPropertyIdIn(propertyIds);
+    }
+
+    @Test
+    void getRequestsForManager_ShouldFilterByStatus_WhenStatusProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndStatus(propertyIds, "OPEN"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "OPEN", null
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("OPEN", result.get(0).getStatus());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndStatus(propertyIds, "OPEN");
+    }
+
+    @Test
+    void getRequestById_ShouldReturnResponse_WhenRequestExists() {
+        MaintenanceRequest request = new MaintenanceRequest();
+        request.setId(requestId);
+        request.setPropertyId(propertyId);
+        request.setCreatedByUserId(createdByUserId);
+        request.setDescription("Broken boiler");
+        request.setPriority("HIGH");
+        request.setStatus("OPEN");
+
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        MaintenanceRequestResponse result = maintenanceRequestService.getRequestById(requestId);
+
+        assertNotNull(result);
+        assertEquals(requestId, result.getId());
+        assertEquals("OPEN", result.getStatus());
+        verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void getRequestById_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestService.getRequestById(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
+    
+    @Test
+    void getRequestsForManager_ShouldFilterByPriority_WhenPriorityProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndPriority(propertyIds, "HIGH"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, "HIGH"
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("HIGH", result.get(0).getPriority());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndPriority(propertyIds, "HIGH");
+    }
+
+    @Test
+    void getRequestsForManager_ShouldFilterByStatusAndPriority_WhenBothProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(propertyIds, "OPEN", "HIGH"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "OPEN", "HIGH"
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("OPEN", result.get(0).getStatus());
+        assertEquals("HIGH", result.get(0).getPriority());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndStatusAndPriority(propertyIds, "OPEN", "HIGH");
     }
 }

@@ -43,7 +43,8 @@ class MaintenanceRequestControllerManagerOverviewTest {
         request2.setPropertyId(UUID.randomUUID());
         request2.setStatus("IN_PROGRESS");
 
-        Mockito.when(maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token"))
+        Mockito.when(maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, null))
                 .thenReturn(List.of(request1, request2));
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -55,7 +56,9 @@ class MaintenanceRequestControllerManagerOverviewTest {
         );
 
         ResponseEntity<List<MaintenanceRequest>> response =
-                maintenanceRequestController.getRequestsForManager("Bearer test-token");
+                maintenanceRequestController.getRequestsForManager(
+                        "Bearer test-token", null, null
+                );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(2, response.getBody().size());
@@ -67,7 +70,8 @@ class MaintenanceRequestControllerManagerOverviewTest {
     void getRequestsForManager_ShouldReturn200_WithEmptyList_WhenNoRequestsExist() {
         UUID managerId = UUID.randomUUID();
 
-        Mockito.when(maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token"))
+        Mockito.when(maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, null))
                 .thenReturn(List.of());
 
         SecurityContextHolder.getContext().setAuthentication(
@@ -79,10 +83,44 @@ class MaintenanceRequestControllerManagerOverviewTest {
         );
 
         ResponseEntity<List<MaintenanceRequest>> response =
-                maintenanceRequestController.getRequestsForManager("Bearer test-token");
+                maintenanceRequestController.getRequestsForManager(
+                        "Bearer test-token", null, null
+                );
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(0, response.getBody().size());
+    }
+
+    @Test
+    void getRequestsForManager_ShouldReturn200_WhenFilteredByStatus() {
+        UUID managerId = UUID.randomUUID();
+
+        MaintenanceRequest request = new MaintenanceRequest();
+        request.setId(UUID.randomUUID());
+        request.setPropertyId(UUID.randomUUID());
+        request.setStatus("COMPLETED");
+        request.setPriority("HIGH");
+
+        Mockito.when(maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "COMPLETED", null))
+                .thenReturn(List.of(request));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        managerId.toString(),
+                        "test-token",
+                        List.of()
+                )
+        );
+
+        ResponseEntity<List<MaintenanceRequest>> response =
+                maintenanceRequestController.getRequestsForManager(
+                        "Bearer test-token", "COMPLETED", null
+                );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        assertEquals("COMPLETED", response.getBody().get(0).getStatus());
     }
 
     @Test
@@ -90,7 +128,9 @@ class MaintenanceRequestControllerManagerOverviewTest {
         SecurityContextHolder.clearContext();
 
         assertThrows(NullPointerException.class, () ->
-        		maintenanceRequestController.getRequestsForManager("Bearer test-token")
+                maintenanceRequestController.getRequestsForManager(
+                        "Bearer test-token", null, null
+                )
         );
     }
 
@@ -121,5 +161,40 @@ class MaintenanceRequestControllerManagerOverviewTest {
         );
 
         assertEquals("Access Denied", ex.getMessage());
+    }
+    
+    @Test
+    void getRequestsForManager_ShouldPassStatusAndPriorityFilters() {
+        UUID managerId = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(UUID.randomUUID());
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        Mockito.when(
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "OPEN", "HIGH"
+                )
+        ).thenReturn(List.of(request1));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        managerId.toString(),
+                        "test-token",
+                        List.of()
+                )
+        );
+
+        ResponseEntity<List<MaintenanceRequest>> response =
+                maintenanceRequestController.getRequestsForManager(
+                        "Bearer test-token", "OPEN", "HIGH"
+                );
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        assertEquals("OPEN", response.getBody().get(0).getStatus());
+        assertEquals("HIGH", response.getBody().get(0).getPriority());
     }
 }

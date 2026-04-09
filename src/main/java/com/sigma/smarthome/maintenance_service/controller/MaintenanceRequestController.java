@@ -37,13 +37,15 @@ public class MaintenanceRequestController {
     @GetMapping
     @PreAuthorize("hasRole('PROPERTY_MANAGER')")
     public ResponseEntity<List<MaintenanceRequest>> getRequestsForManager(
-            @RequestHeader("Authorization") String authorizationHeader
+            @RequestHeader("Authorization") String authorizationHeader,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String priority
     ) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         UUID managerId = UUID.fromString(authentication.getName());
 
         List<MaintenanceRequest> requests =
-                maintenanceRequestService.getRequestsForManager(managerId, authorizationHeader);
+                maintenanceRequestService.getRequestsForManager(managerId, authorizationHeader, status, priority);
 
         return ResponseEntity.ok(requests);
     }

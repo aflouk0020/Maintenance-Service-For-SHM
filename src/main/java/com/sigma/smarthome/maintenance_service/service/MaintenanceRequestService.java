@@ -28,12 +28,33 @@ public class MaintenanceRequestService {
         this.maintenanceRequestRepository = maintenanceRequestRepository;
         this.propertyServiceClient = propertyServiceClient;
     }
-    
-    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
+
+    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken, String status, String priority) {
         List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
 
         if (propertyIds.isEmpty()) {
             return List.of();
+        }
+
+        String normalizedStatus = (status == null || status.isBlank()) ? null : status.trim().toUpperCase();
+        String normalizedPriority = (priority == null || priority.isBlank()) ? null : priority.trim().toUpperCase();
+
+        if (normalizedStatus != null && normalizedPriority != null) {
+            return maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(
+                    propertyIds, normalizedStatus, normalizedPriority
+            );
+        }
+
+        if (normalizedStatus != null) {
+            return maintenanceRequestRepository.findByPropertyIdInAndStatus(
+                    propertyIds, normalizedStatus
+            );
+        }
+
+        if (normalizedPriority != null) {
+            return maintenanceRequestRepository.findByPropertyIdInAndPriority(
+                    propertyIds, normalizedPriority
+            );
         }
 
         return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
@@ -72,8 +93,7 @@ public class MaintenanceRequestService {
                         new ResourceNotFoundException("Maintenance request not found: " + requestId));
 
         if (request.getAssignedStaffId() == null || !request.getAssignedStaffId().equals(loggedInUserId)) {
-            throw new ForbiddenOperationException(
-                    "You are not allowed to update this maintenance request");
+            throw new ForbiddenOperationException("You are not allowed to update this maintenance request");
         }
 
         String normalizedStatus = newStatus.trim().toUpperCase();
@@ -89,5 +109,23 @@ public class MaintenanceRequestService {
         }
 
         return maintenanceRequestRepository.save(request);
+    }
+
+    public MaintenanceRequestResponse getRequestById(UUID id) {
+        MaintenanceRequest request = maintenanceRequestRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Maintenance request not found: " + id));
+
+        return new MaintenanceRequestResponse(
+                request.getId(),
+                request.getPropertyId(),
+                request.getCreatedByUserId(),
+                request.getAssignedStaffId(),
+                request.getDescription(),
+                request.getPriority(),
+                request.getStatus(),
+                request.getCreatedAt(),
+                request.getUpdatedAt(),
+                request.getCompletedAt()
+        );
     }
 }
