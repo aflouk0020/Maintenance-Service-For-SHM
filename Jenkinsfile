@@ -33,6 +33,14 @@ pipeline {
             post {
                 always {
                     echo 'Karate test stage complete.'
+                    publishHTML(target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target/karate-reports',
+                        reportFiles: 'karate-summary.html',
+                        reportName: 'Karate Test Report'
+                    ])
                 }
                 success {
                     echo 'Karate API tests passed.'
