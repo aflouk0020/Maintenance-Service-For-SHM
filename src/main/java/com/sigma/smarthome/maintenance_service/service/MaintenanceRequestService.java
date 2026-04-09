@@ -44,15 +44,36 @@ public class MaintenanceRequestService {
 	this.notificationServiceClient = notificationServiceClient;
 	}
 
-    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken) {
-        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
+	    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken, String status, String priority) {
+	        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
 
-        if (propertyIds.isEmpty()) {
-            return List.of();
-        }
+	        if (propertyIds.isEmpty()) {
+	            return List.of();
+	        }
 
-        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
-    }
+	        String normalizedStatus = (status == null || status.isBlank()) ? null : status.trim().toUpperCase();
+	        String normalizedPriority = (priority == null || priority.isBlank()) ? null : priority.trim().toUpperCase();
+
+	        if (normalizedStatus != null && normalizedPriority != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(
+	                    propertyIds, normalizedStatus, normalizedPriority
+	            );
+	        }
+
+	        if (normalizedStatus != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndStatus(
+	                    propertyIds, normalizedStatus
+	            );
+	        }
+
+	        if (normalizedPriority != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndPriority(
+	                    propertyIds, normalizedPriority
+	            );
+	        }
+
+	        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
+	    }
 
     public List<MaintenanceHistoryResponse> getRequestHistory(UUID requestId) {
         if (!maintenanceRequestRepository.existsById(requestId)) {

@@ -7,6 +7,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.Sql.ExecutionPhase;
 
 import java.util.List;
 import java.util.UUID;
@@ -14,9 +16,35 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DataJpaTest
+@DataJpaTest(properties = {
+        "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=MySQL",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.jpa.hibernate.ddl-auto=none",
+        "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
+        "spring.jpa.show-sql=false"
+})
 @ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
+@Sql(
+    statements = {
+        "DROP TABLE IF EXISTS maintenance_requests",
+        "CREATE TABLE maintenance_requests (" +
+        "id UUID PRIMARY KEY, " +
+        "property_id UUID NOT NULL, " +
+        "created_by_user_id UUID NOT NULL, " +
+        "assigned_staff_id UUID, " +
+        "description TEXT NOT NULL, " +
+        "priority VARCHAR(20) NOT NULL, " +
+        "status VARCHAR(30) NOT NULL, " +
+        "created_at TIMESTAMP NOT NULL, " +
+        "updated_at TIMESTAMP NOT NULL, " +
+        "completed_at TIMESTAMP" +
+        ")"
+    },
+    executionPhase = ExecutionPhase.BEFORE_TEST_METHOD
+)
 class MaintenanceRequestRepositoryTest {
 
     @Autowired
