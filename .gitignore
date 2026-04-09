@@ -13,4 +13,4 @@ target/
 
 # Wrapper
 mvnw
-mvnw.cmd
+mvnw.cmd.idea/

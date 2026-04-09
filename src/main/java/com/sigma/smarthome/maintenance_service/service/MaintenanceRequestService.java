@@ -1,11 +1,15 @@
 package com.sigma.smarthome.maintenance_service.service;
 
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
+import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,7 +17,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
+import java.util.stream.Collectors;
+import com.sigma.smarthome.maintenance_service.client.NotificationServiceClient;
+import com.sigma.smarthome.maintenance_service.dto.CreateNotificationDto;
 @Service
 public class MaintenanceRequestService {
 
@@ -22,42 +28,102 @@ public class MaintenanceRequestService {
 
     private final MaintenanceRequestRepository maintenanceRequestRepository;
     private final PropertyServiceClient propertyServiceClient;
+    private final UserServiceClient userServiceClient;
+    private final MaintenanceHistoryRepository maintenanceHistoryRepository;
+    private final NotificationServiceClient notificationServiceClient;
+    
+	    public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
+	            PropertyServiceClient propertyServiceClient,
+	            UserServiceClient userServiceClient,
+	            MaintenanceHistoryRepository maintenanceHistoryRepository,
+	            NotificationServiceClient notificationServiceClient) {
+	this.maintenanceRequestRepository = maintenanceRequestRepository;
+	this.propertyServiceClient = propertyServiceClient;
+	this.userServiceClient = userServiceClient;
+	this.maintenanceHistoryRepository = maintenanceHistoryRepository;
+	this.notificationServiceClient = notificationServiceClient;
+	}
 
-    public MaintenanceRequestService(MaintenanceRequestRepository maintenanceRequestRepository,
-                                     PropertyServiceClient propertyServiceClient) {
-        this.maintenanceRequestRepository = maintenanceRequestRepository;
-        this.propertyServiceClient = propertyServiceClient;
+	    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken, String status, String priority) {
+	        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
+
+	        if (propertyIds.isEmpty()) {
+	            return List.of();
+	        }
+
+	        String normalizedStatus = (status == null || status.isBlank()) ? null : status.trim().toUpperCase();
+	        String normalizedPriority = (priority == null || priority.isBlank()) ? null : priority.trim().toUpperCase();
+
+	        if (normalizedStatus != null && normalizedPriority != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(
+	                    propertyIds, normalizedStatus, normalizedPriority
+	            );
+	        }
+
+	        if (normalizedStatus != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndStatus(
+	                    propertyIds, normalizedStatus
+	            );
+	        }
+
+	        if (normalizedPriority != null) {
+	            return maintenanceRequestRepository.findByPropertyIdInAndPriority(
+	                    propertyIds, normalizedPriority
+	            );
+	        }
+
+	        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
+	    }
+
+    public List<MaintenanceHistoryResponse> getRequestHistory(UUID requestId) {
+        if (!maintenanceRequestRepository.existsById(requestId)) {
+            throw new ResourceNotFoundException("Maintenance request not found: " + requestId);
+        }
+
+        return maintenanceHistoryRepository.findByRequestIdOrderByChangedAtAsc(requestId)
+                .stream()
+                .map(history -> new MaintenanceHistoryResponse(
+                        history.getId(),
+                        history.getRequestId(),
+                        history.getOldStatus(),
+                        history.getNewStatus(),
+                        history.getChangedByUserId(),
+                        history.getChangedAt()
+                ))
+                .collect(Collectors.toList());
     }
 
-    public List<MaintenanceRequest> getRequestsForManager(UUID managerId, String bearerToken, String status, String priority) {
-        List<UUID> propertyIds = propertyServiceClient.getPropertyIdsManagedBy(managerId, bearerToken);
+    private boolean isValidTransition(String oldStatus, String newStatus) {
+        return switch (oldStatus) {
+            case "OPEN" -> "IN_PROGRESS".equals(newStatus);
+            case "IN_PROGRESS" -> "COMPLETED".equals(newStatus);
+            case "COMPLETED" -> false;
+            default -> false;
+        };
+    }
 
-        if (propertyIds.isEmpty()) {
-            return List.of();
-        }
+    public MaintenanceRequest assignStaff(UUID requestId, UUID staffId, String bearerToken) {
+        userServiceClient.validateMaintenanceStaff(staffId, bearerToken);
 
-        String normalizedStatus = (status == null || status.isBlank()) ? null : status.trim().toUpperCase();
-        String normalizedPriority = (priority == null || priority.isBlank()) ? null : priority.trim().toUpperCase();
+        MaintenanceRequest request = maintenanceRequestRepository.findById(requestId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Maintenance request not found: " + requestId));
 
-        if (normalizedStatus != null && normalizedPriority != null) {
-            return maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(
-                    propertyIds, normalizedStatus, normalizedPriority
-            );
-        }
+        request.setAssignedStaffId(staffId);
 
-        if (normalizedStatus != null) {
-            return maintenanceRequestRepository.findByPropertyIdInAndStatus(
-                    propertyIds, normalizedStatus
-            );
-        }
+        MaintenanceRequest savedRequest = maintenanceRequestRepository.save(request);
 
-        if (normalizedPriority != null) {
-            return maintenanceRequestRepository.findByPropertyIdInAndPriority(
-                    propertyIds, normalizedPriority
-            );
-        }
+        CreateNotificationDto notification = new CreateNotificationDto(
+                staffId,
+                "Maintenance Request Assigned",
+                "You have been assigned to maintenance request " + savedRequest.getId(),
+                "ASSIGNMENT",
+                false
+        );
 
-        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
+        notificationServiceClient.sendNotification(notification);
+
+        return savedRequest;
     }
 
     public MaintenanceRequestResponse createRequest(CreateMaintenanceRequestDto dto) {
@@ -102,13 +168,41 @@ public class MaintenanceRequestService {
             throw new IllegalArgumentException("Invalid status: " + newStatus);
         }
 
+        String oldStatus = request.getStatus();
+
+        if (!isValidTransition(oldStatus, normalizedStatus)) {
+            throw new IllegalArgumentException(
+                    "Invalid status transition: " + oldStatus + " -> " + normalizedStatus
+            );
+        }
+
         request.setStatus(normalizedStatus);
 
         if ("COMPLETED".equals(normalizedStatus)) {
             request.setCompletedAt(LocalDateTime.now());
         }
 
-        return maintenanceRequestRepository.save(request);
+        MaintenanceRequest savedRequest = maintenanceRequestRepository.save(request);
+
+        MaintenanceHistory history = new MaintenanceHistory();
+        history.setRequestId(savedRequest.getId());
+        history.setOldStatus(oldStatus);
+        history.setNewStatus(normalizedStatus);
+        history.setChangedByUserId(loggedInUserId);
+
+        maintenanceHistoryRepository.save(history);
+
+        CreateNotificationDto notification = new CreateNotificationDto(
+                request.getCreatedByUserId(),
+                "Maintenance Request Updated",
+                "Your maintenance request " + savedRequest.getId() + " status changed to " + normalizedStatus,
+                "STATUS_UPDATE",
+                false
+        );
+
+        notificationServiceClient.sendNotification(notification);
+
+        return savedRequest;
     }
 
     public MaintenanceRequestResponse getRequestById(UUID id) {

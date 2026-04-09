@@ -1,11 +1,16 @@
 package com.sigma.smarthome.maintenance_service.service;
 
+import com.sigma.smarthome.maintenance_service.client.NotificationServiceClient;
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
+import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.CreateNotificationDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.repository.MaintenanceHistoryRepository;
 import com.sigma.smarthome.maintenance_service.repository.MaintenanceRequestRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,6 +27,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,6 +42,15 @@ class MaintenanceRequestServiceTest {
     @Mock
     private PropertyServiceClient propertyServiceClient;
 
+    @Mock
+    private UserServiceClient userServiceClient;
+
+    @Mock
+    private MaintenanceHistoryRepository maintenanceHistoryRepository;
+
+    @Mock
+    private NotificationServiceClient notificationServiceClient;
+
     @InjectMocks
     private MaintenanceRequestService maintenanceRequestService;
 
@@ -41,6 +58,8 @@ class MaintenanceRequestServiceTest {
     private UUID createdByUserId;
     private UUID requestId;
     private UUID managerId;
+    private UUID staffId;
+    private String bearerToken;
 
     @BeforeEach
     void setUp() {
@@ -48,6 +67,8 @@ class MaintenanceRequestServiceTest {
         createdByUserId = UUID.randomUUID();
         requestId = UUID.randomUUID();
         managerId = UUID.randomUUID();
+        staffId = UUID.randomUUID();
+        bearerToken = "Bearer test-token";
     }
 
     @Test
@@ -67,18 +88,33 @@ class MaintenanceRequestServiceTest {
         saved.setPriority("HIGH");
         saved.setStatus("OPEN");
 
-        when(maintenanceRequestRepository.save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class)))
+        when(maintenanceRequestRepository.save(any(MaintenanceRequest.class)))
                 .thenReturn(saved);
 
         MaintenanceRequestResponse result = maintenanceRequestService.createRequest(dto);
 
         verify(propertyServiceClient).validatePropertyExists(propertyId);
-        verify(maintenanceRequestRepository).save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class));
+        verify(maintenanceRequestRepository).save(any(MaintenanceRequest.class));
 
         assertNotNull(result);
         assertEquals(requestId, result.getId());
         assertEquals("OPEN", result.getStatus());
         assertEquals(createdByUserId, result.getAssignedStaffId());
+    }
+
+    @Test
+    void createRequest_ShouldThrowException_WhenPropertyDoesNotExist() {
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Property not found: " + propertyId))
+                .when(propertyServiceClient).validatePropertyExists(propertyId);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> maintenanceRequestService.createRequest(dto));
     }
 
     @Test
@@ -97,6 +133,8 @@ class MaintenanceRequestServiceTest {
 
         when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
         when(maintenanceRequestRepository.save(existing)).thenReturn(updated);
+        when(maintenanceHistoryRepository.save(any(MaintenanceHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         MaintenanceRequest result =
                 maintenanceRequestService.updateStatus(requestId, loggedInUserId, "IN_PROGRESS");
@@ -140,21 +178,6 @@ class MaintenanceRequestServiceTest {
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
         verify(maintenanceRequestRepository).findById(requestId);
-    }
-
-    @Test
-    void createRequest_ShouldThrowException_WhenPropertyDoesNotExist() {
-        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
-        dto.setPropertyId(propertyId);
-        dto.setCreatedByUserId(createdByUserId);
-        dto.setDescription("Leaking pipe");
-        dto.setPriority("HIGH");
-
-        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Property not found: " + propertyId))
-                .when(propertyServiceClient).validatePropertyExists(propertyId);
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> maintenanceRequestService.createRequest(dto));
     }
 
     @Test
@@ -205,7 +228,7 @@ class MaintenanceRequestServiceTest {
         assertTrue(result.isEmpty());
 
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
-        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).findByPropertyIdIn(org.mockito.ArgumentMatchers.anyList());
+        verify(maintenanceRequestRepository, never()).findByPropertyIdIn(any());
     }
 
     @Test
@@ -259,38 +282,6 @@ class MaintenanceRequestServiceTest {
         verify(maintenanceRequestRepository).findByPropertyIdInAndStatus(propertyIds, "OPEN");
     }
 
-    @Test
-    void getRequestById_ShouldReturnResponse_WhenRequestExists() {
-        MaintenanceRequest request = new MaintenanceRequest();
-        request.setId(requestId);
-        request.setPropertyId(propertyId);
-        request.setCreatedByUserId(createdByUserId);
-        request.setDescription("Broken boiler");
-        request.setPriority("HIGH");
-        request.setStatus("OPEN");
-
-        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
-
-        MaintenanceRequestResponse result = maintenanceRequestService.getRequestById(requestId);
-
-        assertNotNull(result);
-        assertEquals(requestId, result.getId());
-        assertEquals("OPEN", result.getStatus());
-        verify(maintenanceRequestRepository).findById(requestId);
-    }
-
-    @Test
-    void getRequestById_ShouldThrowNotFound_WhenRequestDoesNotExist() {
-        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
-
-        ResourceNotFoundException ex = assertThrows(
-                ResourceNotFoundException.class,
-                () -> maintenanceRequestService.getRequestById(requestId)
-        );
-
-        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
-    }
-    
     @Test
     void getRequestsForManager_ShouldFilterByPriority_WhenPriorityProvided() {
         UUID propertyId1 = UUID.randomUUID();
@@ -352,5 +343,96 @@ class MaintenanceRequestServiceTest {
 
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
         verify(maintenanceRequestRepository).findByPropertyIdInAndStatusAndPriority(propertyIds, "OPEN", "HIGH");
+    }
+
+    @Test
+    void getRequestById_ShouldReturnResponse_WhenRequestExists() {
+        MaintenanceRequest request = new MaintenanceRequest();
+        request.setId(requestId);
+        request.setPropertyId(propertyId);
+        request.setCreatedByUserId(createdByUserId);
+        request.setDescription("Broken boiler");
+        request.setPriority("HIGH");
+        request.setStatus("OPEN");
+
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(request));
+
+        MaintenanceRequestResponse result = maintenanceRequestService.getRequestById(requestId);
+
+        assertNotNull(result);
+        assertEquals(requestId, result.getId());
+        assertEquals("OPEN", result.getStatus());
+        verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void getRequestById_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestService.getRequestById(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
+
+    @Test
+    void assignStaff_ShouldUpdateAssignedStaffId_WhenRequestExistsAndUserIsMaintenanceStaff() {
+        MaintenanceRequest existing = new MaintenanceRequest();
+        existing.setId(requestId);
+        existing.setPropertyId(propertyId);
+        existing.setCreatedByUserId(managerId);
+        existing.setAssignedStaffId(managerId);
+        existing.setDescription("Boiler not working");
+        existing.setPriority("HIGH");
+        existing.setStatus("OPEN");
+
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
+        when(maintenanceRequestRepository.save(existing)).thenReturn(existing);
+        doNothing().when(notificationServiceClient).sendNotification(any(CreateNotificationDto.class));
+
+        MaintenanceRequest result =
+                maintenanceRequestService.assignStaff(requestId, staffId, bearerToken);
+
+        assertNotNull(result);
+        assertEquals(staffId, result.getAssignedStaffId());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository).findById(requestId);
+        verify(maintenanceRequestRepository).save(existing);
+    }
+
+    @Test
+    void assignStaff_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.empty());
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository).findById(requestId);
+    }
+
+    @Test
+    void assignStaff_ShouldThrowForbidden_WhenSelectedUserIsNotMaintenanceStaff() {
+        org.mockito.Mockito.doThrow(
+                new ForbiddenOperationException("Only MAINTENANCE_STAFF users can be assigned"))
+                .when(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+
+        ForbiddenOperationException ex = assertThrows(
+                ForbiddenOperationException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("Only MAINTENANCE_STAFF users can be assigned", ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository, never()).findById(any());
+        verify(maintenanceRequestRepository, never()).save(any());
     }
 }
