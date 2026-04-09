@@ -1,5 +1,6 @@
 package com.sigma.smarthome.maintenance_service.client;
-
+import com.sigma.smarthome.maintenance_service.exception.ServiceUnavailableException;
+import org.springframework.web.client.RestClientException;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Value;
@@ -51,6 +52,8 @@ public class UserServiceClient {
             throw new ForbiddenOperationException("Unauthorized to validate selected user");
         } catch (HttpClientErrorException.Forbidden ex) {
             throw new ForbiddenOperationException("Forbidden from validating selected user");
+        } catch (RestClientException ex) {
+            throw new ServiceUnavailableException("User Service is unavailable", ex);
         }
     }
 }

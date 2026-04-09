@@ -32,6 +32,7 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import com.sigma.smarthome.maintenance_service.exception.ServiceUnavailableException;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
@@ -434,5 +435,57 @@ class MaintenanceRequestServiceTest {
         verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
         verify(maintenanceRequestRepository, never()).findById(any());
         verify(maintenanceRequestRepository, never()).save(any());
+    }
+    
+    @Test
+    void getRequestsForManager_ShouldThrowServiceUnavailable_WhenPropertyServiceFails() {
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenThrow(new ServiceUnavailableException("Property Service is unavailable"));
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, null
+                )
+        );
+
+        assertEquals("Property Service is unavailable", ex.getMessage());
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository, never()).findByPropertyIdIn(any());
+    }
+
+    @Test
+    void createRequest_ShouldThrowServiceUnavailable_WhenPropertyServiceFails() {
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        org.mockito.Mockito.doThrow(new ServiceUnavailableException("Property Service is unavailable"))
+                .when(propertyServiceClient).validatePropertyExists(propertyId);
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.createRequest(dto)
+        );
+
+        assertEquals("Property Service is unavailable", ex.getMessage());
+    }
+
+    @Test
+    void assignStaff_ShouldThrowServiceUnavailable_WhenUserServiceFails() {
+        org.mockito.Mockito.doThrow(new ServiceUnavailableException("User Service is unavailable"))
+                .when(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("User Service is unavailable", ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository, never()).findById(any());
     }
 }

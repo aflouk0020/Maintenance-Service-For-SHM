@@ -10,7 +10,8 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
+import com.sigma.smarthome.maintenance_service.exception.ServiceUnavailableException;
+import org.springframework.web.client.RestClientException;
 
 
 @Component
@@ -50,14 +51,21 @@ public class PropertyServiceClient {
         headers.setBearerAuth(bearerToken.replace("Bearer ", ""));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<UUID[]> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                UUID[].class
-        );
+        try {
+            ResponseEntity<UUID[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    UUID[].class
+            );
 
-        UUID[] body = response.getBody();
-        return body == null ? List.of() : Arrays.asList(body);
+            UUID[] body = response.getBody();
+            return body == null ? List.of() : Arrays.asList(body);
+
+        } catch (HttpClientErrorException.NotFound ex) {
+            return List.of();
+        } catch (RestClientException ex) {
+            throw new ServiceUnavailableException("Property Service is unavailable", ex);
+        }
     }
 }
