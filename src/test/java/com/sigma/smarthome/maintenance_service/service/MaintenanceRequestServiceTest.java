@@ -44,7 +44,7 @@ class MaintenanceRequestServiceTest {
 
     @Mock
     private UserServiceClient userServiceClient;
-
+    
     @Mock
     private MaintenanceHistoryRepository maintenanceHistoryRepository;
 
