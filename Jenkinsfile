@@ -25,6 +25,32 @@ pipeline {
             }
         }
 
+        stage('Karate API Tests') {
+            steps {
+                echo 'Running Karate API integration tests...'
+                bat 'mvnw.cmd test -Dtest=KarateRunner -DfailIfNoTests=false'
+            }
+            post {
+                always {
+                    echo 'Karate test stage complete.'
+                    publishHTML(target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'target/karate-reports',
+                        reportFiles: 'karate-summary.html',
+                        reportName: 'Karate Test Report'
+                    ])
+                }
+                success {
+                    echo 'Karate API tests passed.'
+                }
+                failure {
+                    echo 'Karate API tests failed - service may not be running.'
+                }
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
