@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f8b2566c-6ace-46c4-a9d3-8ba52be37841" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/PropertyServiceClientTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestControllerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/MaintenanceRequestServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,30 +47,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;JUnit.All in maintenance-service (1).executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.All in maintenance-service (2).executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.All in maintenance-service (3).executor&quot;: &quot;Coverage&quot;,
-    &quot;JUnit.All in maintenance-service (4).executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.All in maintenance-service.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;Spring Boot.MaintenanceServiceApplication.executor&quot;: &quot;Run&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;feature/SMPM-78-required-fields-tests&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "JUnit.All in maintenance-service (1).executor": "Run",
+    "JUnit.All in maintenance-service (2).executor": "Run",
+    "JUnit.All in maintenance-service (3).executor": "Coverage",
+    "JUnit.All in maintenance-service (4).executor": "Run",
+    "JUnit.All in maintenance-service.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "Spring Boot.MaintenanceServiceApplication.executor": "Run",
+    "git-widget-placeholder": "feature/SHMP-119-validate-property-before-maintenance-request",
+    "ignore.virus.scanning.warn.message": "true",
+    "kotlin-language-version-configured": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="com.sigma.smarthome.maintenance_service.security" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.All in maintenance-service (2)">
+  <component name="RunManager" selected="JUnit.All in maintenance-service (3)">
     <configuration name="All in maintenance-service (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
@@ -89,7 +87,7 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="All in maintenance-service (4)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="All in maintenance-service (3)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
       <option name="TEST_OBJECT" value="package" />
@@ -121,11 +119,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.All in maintenance-service (3)" />
         <item itemvalue="JUnit.All in maintenance-service (2)" />
         <item itemvalue="JUnit.All in maintenance-service (1)" />
         <item itemvalue="JUnit.All in maintenance-service" />
         <item itemvalue="Spring Boot.MaintenanceServiceApplication" />
-        <item itemvalue="JUnit.All in maintenance-service (4)" />
       </list>
     </recent_temporary>
   </component>
