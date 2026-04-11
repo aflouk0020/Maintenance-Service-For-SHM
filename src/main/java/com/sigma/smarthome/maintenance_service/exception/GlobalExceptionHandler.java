@@ -23,6 +23,14 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<Map<String, Object>> handleServiceUnavailable(ServiceUnavailableException ex) {
+        return buildResponse(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "A required service is temporarily unavailable. Please try again shortly."
+        );
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex) {
         String message = ex.getBindingResult().getFieldError() != null
@@ -39,7 +47,10 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneral(Exception ex) {
-        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage());
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred. Please try again later."
+        );
     }
 
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {

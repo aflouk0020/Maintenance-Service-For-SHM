@@ -1,9 +1,12 @@
 package com.sigma.smarthome.maintenance_service.service;
 
+import com.sigma.smarthome.maintenance_service.client.NotificationServiceClient;
 import com.sigma.smarthome.maintenance_service.client.PropertyServiceClient;
 import com.sigma.smarthome.maintenance_service.client.UserServiceClient;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import com.sigma.smarthome.maintenance_service.dto.CreateNotificationDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
+import com.sigma.smarthome.maintenance_service.entity.MaintenanceHistory;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
 import com.sigma.smarthome.maintenance_service.exception.ForbiddenOperationException;
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
@@ -16,23 +19,24 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import java.util.List;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.sigma.smarthome.maintenance_service.exception.ServiceUnavailableException;
 
 @ExtendWith(MockitoExtension.class)
 class MaintenanceRequestServiceTest {
 
-	@Mock
-	private MaintenanceHistoryRepository maintenanceHistoryRepository;
-	
     @Mock
     private MaintenanceRequestRepository maintenanceRequestRepository;
 
@@ -42,6 +46,12 @@ class MaintenanceRequestServiceTest {
     @Mock
     private UserServiceClient userServiceClient;
     
+    @Mock
+    private MaintenanceHistoryRepository maintenanceHistoryRepository;
+
+    @Mock
+    private NotificationServiceClient notificationServiceClient;
+
     @InjectMocks
     private MaintenanceRequestService maintenanceRequestService;
 
@@ -61,7 +71,6 @@ class MaintenanceRequestServiceTest {
         staffId = UUID.randomUUID();
         bearerToken = "Bearer test-token";
     }
-    
 
     @Test
     void createRequest_ShouldValidatePropertyAndSaveRequest() {
@@ -80,18 +89,33 @@ class MaintenanceRequestServiceTest {
         saved.setPriority("HIGH");
         saved.setStatus("OPEN");
 
-        when(maintenanceRequestRepository.save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class)))
+        when(maintenanceRequestRepository.save(any(MaintenanceRequest.class)))
                 .thenReturn(saved);
 
         MaintenanceRequestResponse result = maintenanceRequestService.createRequest(dto);
 
         verify(propertyServiceClient).validatePropertyExists(propertyId);
-        verify(maintenanceRequestRepository).save(org.mockito.ArgumentMatchers.any(MaintenanceRequest.class));
+        verify(maintenanceRequestRepository).save(any(MaintenanceRequest.class));
 
         assertNotNull(result);
         assertEquals(requestId, result.getId());
         assertEquals("OPEN", result.getStatus());
         assertEquals(createdByUserId, result.getAssignedStaffId());
+    }
+
+    @Test
+    void createRequest_ShouldThrowException_WhenPropertyDoesNotExist() {
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Property not found: " + propertyId))
+                .when(propertyServiceClient).validatePropertyExists(propertyId);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> maintenanceRequestService.createRequest(dto));
     }
 
     @Test
@@ -110,6 +134,8 @@ class MaintenanceRequestServiceTest {
 
         when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
         when(maintenanceRequestRepository.save(existing)).thenReturn(updated);
+        when(maintenanceHistoryRepository.save(any(MaintenanceHistory.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         MaintenanceRequest result =
                 maintenanceRequestService.updateStatus(requestId, loggedInUserId, "IN_PROGRESS");
@@ -156,22 +182,6 @@ class MaintenanceRequestServiceTest {
     }
 
     @Test
-    void createRequest_ShouldThrowException_WhenPropertyDoesNotExist() {
-        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
-        dto.setPropertyId(propertyId);
-        dto.setCreatedByUserId(createdByUserId);
-        dto.setDescription("Leaking pipe");
-        dto.setPriority("HIGH");
-
-        org.mockito.Mockito.doThrow(new ResourceNotFoundException("Property not found: " + propertyId))
-                .when(propertyServiceClient).validatePropertyExists(propertyId);
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> maintenanceRequestService.createRequest(dto));
-    }
-    
-    
-    @Test
     void getRequestsForManager_ShouldReturnRequests_WhenManagerHasProperties() {
         UUID propertyId1 = UUID.randomUUID();
         UUID propertyId2 = UUID.randomUUID();
@@ -196,7 +206,7 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(requests);
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertEquals(2, result.size());
@@ -213,13 +223,13 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(List.of());
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
-        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).findByPropertyIdIn(org.mockito.ArgumentMatchers.anyList());
+        verify(maintenanceRequestRepository, never()).findByPropertyIdIn(any());
     }
 
     @Test
@@ -233,13 +243,107 @@ class MaintenanceRequestServiceTest {
                 .thenReturn(List.of());
 
         List<MaintenanceRequest> result =
-                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token");
+                maintenanceRequestService.getRequestsForManager(managerId, "Bearer test-token", null, null);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
 
         verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
         verify(maintenanceRequestRepository).findByPropertyIdIn(propertyIds);
+    }
+
+    @Test
+    void getRequestsForManager_ShouldFilterByStatus_WhenStatusProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndStatus(propertyIds, "OPEN"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "OPEN", null
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("OPEN", result.get(0).getStatus());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndStatus(propertyIds, "OPEN");
+    }
+
+    @Test
+    void getRequestsForManager_ShouldFilterByPriority_WhenPriorityProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndPriority(propertyIds, "HIGH"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, "HIGH"
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("HIGH", result.get(0).getPriority());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndPriority(propertyIds, "HIGH");
+    }
+
+    @Test
+    void getRequestsForManager_ShouldFilterByStatusAndPriority_WhenBothProvided() {
+        UUID propertyId1 = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setPropertyId(propertyId1);
+        request1.setStatus("OPEN");
+        request1.setPriority("HIGH");
+
+        List<UUID> propertyIds = List.of(propertyId1);
+
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenReturn(propertyIds);
+
+        when(maintenanceRequestRepository.findByPropertyIdInAndStatusAndPriority(propertyIds, "OPEN", "HIGH"))
+                .thenReturn(List.of(request1));
+
+        List<MaintenanceRequest> result =
+                maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", "OPEN", "HIGH"
+                );
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("OPEN", result.get(0).getStatus());
+        assertEquals("HIGH", result.get(0).getPriority());
+
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository).findByPropertyIdInAndStatusAndPriority(propertyIds, "OPEN", "HIGH");
     }
 
     @Test
@@ -273,7 +377,7 @@ class MaintenanceRequestServiceTest {
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
     }
-    
+
     @Test
     void assignStaff_ShouldUpdateAssignedStaffId_WhenRequestExistsAndUserIsMaintenanceStaff() {
         MaintenanceRequest existing = new MaintenanceRequest();
@@ -287,6 +391,7 @@ class MaintenanceRequestServiceTest {
 
         when(maintenanceRequestRepository.findById(requestId)).thenReturn(Optional.of(existing));
         when(maintenanceRequestRepository.save(existing)).thenReturn(existing);
+        doNothing().when(notificationServiceClient).sendNotification(any(CreateNotificationDto.class));
 
         MaintenanceRequest result =
                 maintenanceRequestService.assignStaff(requestId, staffId, bearerToken);
@@ -328,7 +433,59 @@ class MaintenanceRequestServiceTest {
         assertEquals("Only MAINTENANCE_STAFF users can be assigned", ex.getMessage());
 
         verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
-        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).findById(org.mockito.ArgumentMatchers.any());
-        verify(maintenanceRequestRepository, org.mockito.Mockito.never()).save(org.mockito.ArgumentMatchers.any());
+        verify(maintenanceRequestRepository, never()).findById(any());
+        verify(maintenanceRequestRepository, never()).save(any());
+    }
+    
+    @Test
+    void getRequestsForManager_ShouldThrowServiceUnavailable_WhenPropertyServiceFails() {
+        when(propertyServiceClient.getPropertyIdsManagedBy(managerId, "Bearer test-token"))
+                .thenThrow(new ServiceUnavailableException("Property Service is unavailable"));
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.getRequestsForManager(
+                        managerId, "Bearer test-token", null, null
+                )
+        );
+
+        assertEquals("Property Service is unavailable", ex.getMessage());
+        verify(propertyServiceClient).getPropertyIdsManagedBy(managerId, "Bearer test-token");
+        verify(maintenanceRequestRepository, never()).findByPropertyIdIn(any());
+    }
+
+    @Test
+    void createRequest_ShouldThrowServiceUnavailable_WhenPropertyServiceFails() {
+        CreateMaintenanceRequestDto dto = new CreateMaintenanceRequestDto();
+        dto.setPropertyId(propertyId);
+        dto.setCreatedByUserId(createdByUserId);
+        dto.setDescription("Leaking pipe");
+        dto.setPriority("HIGH");
+
+        org.mockito.Mockito.doThrow(new ServiceUnavailableException("Property Service is unavailable"))
+                .when(propertyServiceClient).validatePropertyExists(propertyId);
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.createRequest(dto)
+        );
+
+        assertEquals("Property Service is unavailable", ex.getMessage());
+    }
+
+    @Test
+    void assignStaff_ShouldThrowServiceUnavailable_WhenUserServiceFails() {
+        org.mockito.Mockito.doThrow(new ServiceUnavailableException("User Service is unavailable"))
+                .when(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+
+        ServiceUnavailableException ex = assertThrows(
+                ServiceUnavailableException.class,
+                () -> maintenanceRequestService.assignStaff(requestId, staffId, bearerToken)
+        );
+
+        assertEquals("User Service is unavailable", ex.getMessage());
+
+        verify(userServiceClient).validateMaintenanceStaff(staffId, bearerToken);
+        verify(maintenanceRequestRepository, never()).findById(any());
     }
 }

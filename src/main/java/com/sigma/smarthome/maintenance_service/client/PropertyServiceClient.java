@@ -1,17 +1,17 @@
 package com.sigma.smarthome.maintenance_service.client;
 
 import com.sigma.smarthome.maintenance_service.exception.ResourceNotFoundException;
+import com.sigma.smarthome.maintenance_service.exception.ServiceUnavailableException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-
-
 
 @Component
 public class PropertyServiceClient {
@@ -37,12 +37,11 @@ public class PropertyServiceClient {
 
         } catch (HttpClientErrorException.NotFound ex) {
             throw new ResourceNotFoundException("Property not found: " + propertyId);
-        } catch (Exception ex) {
-            throw new RuntimeException("Property Service unavailable: " + ex.getMessage());
+        } catch (RestClientException ex) {
+            throw new ServiceUnavailableException("Property Service is unavailable", ex);
         }
     }
-    
-    
+
     public List<UUID> getPropertyIdsManagedBy(UUID managerId, String bearerToken) {
         String url = propertyServiceBaseUrl + "/api/v1/properties/manager/" + managerId;
 
@@ -50,14 +49,21 @@ public class PropertyServiceClient {
         headers.setBearerAuth(bearerToken.replace("Bearer ", ""));
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<UUID[]> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                UUID[].class
-        );
+        try {
+            ResponseEntity<UUID[]> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    entity,
+                    UUID[].class
+            );
 
-        UUID[] body = response.getBody();
-        return body == null ? List.of() : Arrays.asList(body);
+            UUID[] body = response.getBody();
+            return body == null ? List.of() : Arrays.asList(body);
+
+        } catch (HttpClientErrorException.NotFound ex) {
+            return List.of();
+        } catch (RestClientException ex) {
+            throw new ServiceUnavailableException("Property Service is unavailable", ex);
+        }
     }
 }

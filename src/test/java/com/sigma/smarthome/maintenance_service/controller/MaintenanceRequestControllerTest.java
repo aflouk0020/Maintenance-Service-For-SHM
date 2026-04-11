@@ -1,6 +1,8 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
 import com.sigma.smarthome.maintenance_service.entity.MaintenanceRequest;
@@ -21,7 +23,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
-
+import com.sigma.smarthome.maintenance_service.dto.MaintenanceHistoryResponse;
+import java.time.LocalDateTime;
 class MaintenanceRequestControllerTest {
 
     private MaintenanceRequestService maintenanceRequestService;
@@ -202,6 +205,72 @@ class MaintenanceRequestControllerTest {
         ResourceNotFoundException ex = assertThrows(
                 ResourceNotFoundException.class,
                 () -> maintenanceRequestController.getRequestById(requestId)
+        );
+
+        assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
+    }
+    
+    @Test
+    void getRequestHistory_ShouldReturn200_WhenHistoryExists() {
+        UUID requestId = UUID.randomUUID();
+
+        MaintenanceHistoryResponse history1 = new MaintenanceHistoryResponse(
+                UUID.randomUUID(),
+                requestId,
+                "OPEN",
+                "IN_PROGRESS",
+                UUID.randomUUID(),
+                LocalDateTime.now().minusHours(1)
+        );
+
+        MaintenanceHistoryResponse history2 = new MaintenanceHistoryResponse(
+                UUID.randomUUID(),
+                requestId,
+                "IN_PROGRESS",
+                "COMPLETED",
+                UUID.randomUUID(),
+                LocalDateTime.now()
+        );
+
+        when(maintenanceRequestService.getRequestHistory(requestId))
+                .thenReturn(List.of(history1, history2));
+
+        ResponseEntity<List<MaintenanceHistoryResponse>> response =
+                maintenanceRequestController.getRequestHistory(requestId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(2, response.getBody().size());
+        assertEquals("OPEN", response.getBody().get(0).getOldStatus());
+        assertEquals("IN_PROGRESS", response.getBody().get(0).getNewStatus());
+        assertEquals("IN_PROGRESS", response.getBody().get(1).getOldStatus());
+        assertEquals("COMPLETED", response.getBody().get(1).getNewStatus());
+    }
+    
+    @Test
+    void getRequestHistory_ShouldReturn200_WhenNoHistoryExists() {
+        UUID requestId = UUID.randomUUID();
+
+        when(maintenanceRequestService.getRequestHistory(requestId))
+                .thenReturn(List.of());
+
+        ResponseEntity<List<MaintenanceHistoryResponse>> response =
+                maintenanceRequestController.getRequestHistory(requestId);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertTrue(response.getBody().isEmpty());
+    }
+    
+    @Test
+    void getRequestHistory_ShouldThrowNotFound_WhenRequestDoesNotExist() {
+        UUID requestId = UUID.randomUUID();
+
+        when(maintenanceRequestService.getRequestHistory(requestId))
+                .thenThrow(new ResourceNotFoundException("Maintenance request not found: " + requestId));
+
+        ResourceNotFoundException ex = assertThrows(
+                ResourceNotFoundException.class,
+                () -> maintenanceRequestController.getRequestHistory(requestId)
         );
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
