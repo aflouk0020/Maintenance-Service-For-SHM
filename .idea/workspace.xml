@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f8b2566c-6ace-46c4-a9d3-8ba52be37841" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/service/PropertyServiceClientTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandlerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandlerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,9 +51,10 @@
   "keyToString": {
     "JUnit.All in maintenance-service (1).executor": "Run",
     "JUnit.All in maintenance-service (2).executor": "Run",
-    "JUnit.All in maintenance-service (3).executor": "Coverage",
+    "JUnit.All in maintenance-service (3).executor": "Run",
     "JUnit.All in maintenance-service (4).executor": "Run",
     "JUnit.All in maintenance-service.executor": "Run",
+    "JUnit.GlobalExceptionHandlerTest.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -70,7 +71,7 @@
       <recent name="com.sigma.smarthome.maintenance_service.security" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.All in maintenance-service (3)">
+  <component name="RunManager" selected="JUnit.GlobalExceptionHandlerTest">
     <configuration name="All in maintenance-service (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
@@ -103,27 +104,28 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="MaintenanceServiceApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" temporary="true" nameIsGenerated="true">
-      <option name="FRAME_DEACTIVATION_UPDATE_POLICY" value="UnknownPolicyInFreeMode" />
+    <configuration name="GlobalExceptionHandlerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
-      <option name="SPRING_BOOT_MAIN_CLASS" value="com.sigma.smarthome.maintenance_service.MaintenanceServiceApplication" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.sigma.smarthome.maintenance_service.*" />
+          <option name="PATTERN" value="com.sigma.smarthome.maintenance_service.exception.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
+      <option name="PACKAGE_NAME" value="com.sigma.smarthome.maintenance_service.exception" />
+      <option name="MAIN_CLASS_NAME" value="com.sigma.smarthome.maintenance_service.exception.GlobalExceptionHandlerTest" />
+      <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.GlobalExceptionHandlerTest" />
         <item itemvalue="JUnit.All in maintenance-service (3)" />
         <item itemvalue="JUnit.All in maintenance-service (2)" />
         <item itemvalue="JUnit.All in maintenance-service (1)" />
         <item itemvalue="JUnit.All in maintenance-service" />
-        <item itemvalue="Spring Boot.MaintenanceServiceApplication" />
       </list>
     </recent_temporary>
   </component>

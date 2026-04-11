@@ -3,6 +3,7 @@ package com.sigma.smarthome.maintenance_service.exception;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.util.Map;
 
@@ -41,5 +42,25 @@ class GlobalExceptionHandlerTest {
                 "An unexpected error occurred. Please try again later.",
                 response.getBody().get("message")
         );
+    }
+
+    @Test
+    void handleValidation_ShouldReturn400_WhenRequiredFieldMissing() {
+        org.springframework.validation.BeanPropertyBindingResult bindingResult =
+                new org.springframework.validation.BeanPropertyBindingResult(
+                        new com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto(),
+                        "dto"
+                );
+        bindingResult.rejectValue("description", "NotBlank", "description is required");
+
+        MethodArgumentNotValidException ex =
+                new MethodArgumentNotValidException(null, bindingResult);
+
+        ResponseEntity<Map<String, Object>> response = handler.handleValidation(ex);
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(400, response.getBody().get("status"));
+        assertEquals("Bad Request", response.getBody().get("error"));
+        assertEquals("description is required", response.getBody().get("message"));
     }
 }
