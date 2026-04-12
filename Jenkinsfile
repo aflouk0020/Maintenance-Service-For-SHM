@@ -5,13 +5,20 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/aflouk0020/Maintenance-Service-For-SHM.git'
+                checkout scm
             }
         }
 
         stage('Build & Test') {
             steps {
-                bat 'mvnw.cmd clean verify'
+                script {
+                    if (isUnix()) {
+                        sh 'chmod +x mvnw'
+                        sh './mvnw clean verify'
+                    } else {
+                        bat 'mvnw.cmd clean verify'
+                    }
+                }
             }
             post {
                 always {
@@ -28,7 +35,13 @@ pipeline {
         stage('Karate API Tests') {
             steps {
                 echo 'Running Karate API integration tests...'
-                bat 'mvnw.cmd test -Dtest=KarateRunner -DfailIfNoTests=false'
+                script {
+                    if (isUnix()) {
+                        sh './mvnw test -Dtest=KarateRunner -DfailIfNoTests=false'
+                    } else {
+                        bat 'mvnw.cmd test -Dtest=KarateRunner -DfailIfNoTests=false'
+                    }
+                }
             }
             post {
                 always {
@@ -46,7 +59,7 @@ pipeline {
                     echo 'Karate API tests passed.'
                 }
                 failure {
-                    echo 'Karate API tests failed - service may not be running.'
+                    echo 'Karate API tests failed.'
                 }
             }
         }
@@ -54,14 +67,20 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    bat 'mvnw.cmd sonar:sonar -Dsonar.projectKey=maintenance-service -Dsonar.projectName="Maintenance Service"'
+                    script {
+                        if (isUnix()) {
+                            sh './mvnw sonar:sonar -Dsonar.projectKey=maintenance-service -Dsonar.projectName="Maintenance Service"'
+                        } else {
+                            bat 'mvnw.cmd sonar:sonar -Dsonar.projectKey=maintenance-service -Dsonar.projectName="Maintenance Service"'
+                        }
+                    }
                 }
             }
         }
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 10, unit: 'MINUTES') {
+                timeout(time: 20, unit: 'MINUTES') {
                     waitForQualityGate abortPipeline: true
                 }
             }
@@ -73,7 +92,7 @@ pipeline {
             echo 'Maintenance Service pipeline finished.'
         }
         success {
-            echo 'Maintenance Service built successfully.'
+            echo 'Maintenance Service build successful.'
         }
         failure {
             echo 'Maintenance Service pipeline failed.'
