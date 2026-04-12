@@ -275,4 +275,32 @@ class MaintenanceRequestControllerTest {
 
         assertEquals("Maintenance request not found: " + requestId, ex.getMessage());
     }
+
+    @Test
+    void getRequestsForStaff_ShouldReturn200_WhenStaffHasRequests() {
+        UUID staffId = UUID.randomUUID();
+
+        MaintenanceRequest request1 = new MaintenanceRequest();
+        request1.setId(UUID.randomUUID());
+        request1.setAssignedStaffId(staffId);
+        request1.setStatus("IN_PROGRESS");
+
+        when(maintenanceRequestService.getRequestsForStaff(staffId))
+                .thenReturn(List.of(request1));
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(
+                        staffId.toString(),
+                        null,
+                        List.of()
+                )
+        );
+
+        ResponseEntity<List<MaintenanceRequest>> response =
+                maintenanceRequestController.getRequestsForStaff();
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(1, response.getBody().size());
+        assertEquals(staffId, response.getBody().get(0).getAssignedStaffId());
+    }
 }
