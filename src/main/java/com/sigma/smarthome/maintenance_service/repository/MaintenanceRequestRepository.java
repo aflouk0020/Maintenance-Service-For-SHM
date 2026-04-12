@@ -14,4 +14,5 @@ public interface MaintenanceRequestRepository extends JpaRepository<MaintenanceR
     List<MaintenanceRequest> findByPropertyIdInAndPriority(List<UUID> propertyIds, String priority);
 
     List<MaintenanceRequest> findByPropertyIdInAndStatusAndPriority(List<UUID> propertyIds, String status, String priority);
+    List<MaintenanceRequest> findByAssignedStaffIdOrderByCreatedAtDesc(UUID assignedStaffId);
 }

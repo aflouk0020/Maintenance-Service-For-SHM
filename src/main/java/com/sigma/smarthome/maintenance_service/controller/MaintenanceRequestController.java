@@ -93,4 +93,14 @@ public class MaintenanceRequestController {
         List<MaintenanceHistoryResponse> history = maintenanceRequestService.getRequestHistory(id);
         return ResponseEntity.ok(history);
     }
+    
+    @GetMapping("/assigned")
+    @PreAuthorize("hasRole('MAINTENANCE_STAFF')")
+    public ResponseEntity<List<MaintenanceRequest>> getRequestsForStaff() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UUID staffId = UUID.fromString(authentication.getName());
+
+        List<MaintenanceRequest> requests = maintenanceRequestService.getRequestsForStaff(staffId);
+        return ResponseEntity.ok(requests);
+    }
 }

@@ -74,6 +74,10 @@ public class MaintenanceRequestService {
 
 	        return maintenanceRequestRepository.findByPropertyIdIn(propertyIds);
 	    }
+	    
+	    public List<MaintenanceRequest> getRequestsForStaff(UUID staffId) {
+	        return maintenanceRequestRepository.findByAssignedStaffIdOrderByCreatedAtDesc(staffId);
+	    }
 
     public List<MaintenanceHistoryResponse> getRequestHistory(UUID requestId) {
         if (!maintenanceRequestRepository.existsById(requestId)) {
