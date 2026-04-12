@@ -5,8 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f8b2566c-6ace-46c4-a9d3-8ba52be37841" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandlerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/exception/GlobalExceptionHandlerTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestControllerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/sigma/smarthome/maintenance_service/controller/MaintenanceRequestControllerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -76,15 +76,7 @@
       <recent name="com.sigma.smarthome.maintenance_service.security" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.GlobalExceptionHandlerTest">
-    <configuration name="All in maintenance-service (1)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="maintenance-service" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="TEST_OBJECT" value="package" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
+  <component name="RunManager" selected="JUnit.MaintenanceRequestControllerTest">
     <configuration name="All in maintenance-service (2)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
@@ -94,14 +86,6 @@
       </method>
     </configuration>
     <configuration name="All in maintenance-service (3)" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="maintenance-service" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="TEST_OBJECT" value="package" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="All in maintenance-service" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="maintenance-service" />
       <option name="PACKAGE_NAME" value="" />
       <option name="TEST_OBJECT" value="package" />
@@ -124,13 +108,44 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="MaintenanceRequestControllerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="maintenance-service" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.sigma.smarthome.maintenance_service.controller.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.sigma.smarthome.maintenance_service.controller" />
+      <option name="MAIN_CLASS_NAME" value="com.sigma.smarthome.maintenance_service.controller.MaintenanceRequestControllerTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MaintenanceRequestControllerTest.getRequestsForStaff_ShouldReturn200_WhenStaffHasRequests" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="maintenance-service" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.sigma.smarthome.maintenance_service.controller.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.sigma.smarthome.maintenance_service.controller" />
+      <option name="MAIN_CLASS_NAME" value="com.sigma.smarthome.maintenance_service.controller.MaintenanceRequestControllerTest" />
+      <option name="METHOD_NAME" value="getRequestsForStaff_ShouldReturn200_WhenStaffHasRequests" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.MaintenanceRequestControllerTest" />
+        <item itemvalue="JUnit.MaintenanceRequestControllerTest.getRequestsForStaff_ShouldReturn200_WhenStaffHasRequests" />
         <item itemvalue="JUnit.GlobalExceptionHandlerTest" />
         <item itemvalue="JUnit.All in maintenance-service (3)" />
         <item itemvalue="JUnit.All in maintenance-service (2)" />
-        <item itemvalue="JUnit.All in maintenance-service (1)" />
-        <item itemvalue="JUnit.All in maintenance-service" />
       </list>
     </recent_temporary>
   </component>
