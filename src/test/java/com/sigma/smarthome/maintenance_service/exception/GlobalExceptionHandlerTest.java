@@ -63,4 +63,28 @@ class GlobalExceptionHandlerTest {
         assertEquals("Bad Request", response.getBody().get("error"));
         assertEquals("description is required", response.getBody().get("message"));
     }
+
+    @Test
+    void handleNotFound_ShouldReturn404_WhenResourceNotFound() {
+        ResourceNotFoundException ex = new ResourceNotFoundException("Maintenance request not found: 123");
+
+        ResponseEntity<Map<String, Object>> response = handler.handleNotFound(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertEquals(404, response.getBody().get("status"));
+        assertEquals("Not Found", response.getBody().get("error"));
+        assertEquals("Maintenance request not found: 123", response.getBody().get("message"));
+    }
+
+    @Test
+    void handleForbidden_ShouldReturn403_WhenForbiddenOperation() {
+        ForbiddenOperationException ex = new ForbiddenOperationException("You are not allowed to update this maintenance request");
+
+        ResponseEntity<Map<String, Object>> response = handler.handleForbidden(ex);
+
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        assertEquals(403, response.getBody().get("status"));
+        assertEquals("Forbidden", response.getBody().get("error"));
+        assertEquals("You are not allowed to update this maintenance request", response.getBody().get("message"));
+    }
 }
