@@ -36,7 +36,8 @@ public class UserServiceClient {
             ResponseEntity<Map> response =
                     restTemplate.exchange(url, HttpMethod.GET, entity, Map.class);
 
-            Object role = response.getBody() != null ? response.getBody().get("role") : null;
+            Map<String, Object> body = response.getBody();
+            Object role = (body != null) ? body.get("role") : null;
 
             if (role == null) {
                 throw new ResourceNotFoundException("Role information not found for user: " + userId);
