@@ -36,6 +36,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/actuator/**").permitAll()
 
+                        .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-requests/edge/**")
+                        .permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/maintenance-requests/edge/heartbeat/latest")
+                        .permitAll()
+
                         .requestMatchers(HttpMethod.POST, "/api/v1/maintenance-requests")
                         .hasAnyRole("PROPERTY_MANAGER", "MAINTENANCE_STAFF")
 

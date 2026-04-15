@@ -1,6 +1,10 @@
 package com.sigma.smarthome.maintenance_service.controller;
 
 import com.sigma.smarthome.maintenance_service.dto.AssignStaffDto;
+import java.time.OffsetDateTime;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import com.sigma.smarthome.maintenance_service.dto.CreateMaintenanceRequestDto;
 import com.sigma.smarthome.maintenance_service.dto.MaintenanceRequestResponse;
 import com.sigma.smarthome.maintenance_service.dto.UpdateMaintenanceStatusDto;
@@ -15,15 +19,18 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import com.sigma.smarthome.maintenance_service.dto.EdgeHeartbeatDto;
 
 @RestController
 @RequestMapping("/api/v1/maintenance-requests")
 public class MaintenanceRequestController {
 
     private final MaintenanceRequestService maintenanceRequestService;
-
+    private static Map<String, Object> lastHeartbeat = new HashMap<>();
+    
     public MaintenanceRequestController(MaintenanceRequestService maintenanceRequestService) {
         this.maintenanceRequestService = maintenanceRequestService;
     }
@@ -62,6 +69,61 @@ public class MaintenanceRequestController {
                 maintenanceRequestService.assignStaff(id, dto.getStaffId(), authorizationHeader);
 
         return ResponseEntity.ok(updated);
+    }
+    
+    @PostMapping("/edge/heartbeat")
+    public ResponseEntity<Map<String, Object>> receiveEdgeHeartbeat(
+            @Valid @RequestBody EdgeHeartbeatDto dto
+    ) {
+        // ✅ Store latest heartbeat
+        lastHeartbeat = Map.of(
+                "deviceId", dto.getDeviceId(),
+                "propertyId", dto.getPropertyId(),
+                "status", dto.getStatus(),
+                "temperature", dto.getTemperature(),
+                "humidity", dto.getHumidity(),
+                "timestamp", dto.getTimestamp()
+        );
+
+        System.out.println("Edge heartbeat received: " + lastHeartbeat);
+
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(
+                Map.of(
+                        "message", "Edge heartbeat received successfully",
+                        "deviceId", dto.getDeviceId(),
+                        "status", dto.getStatus()
+                )
+        );
+    }
+    
+    @GetMapping("/edge/heartbeat/latest")
+    public ResponseEntity<Map<String, Object>> getLatestHeartbeat() {
+        if (lastHeartbeat == null || lastHeartbeat.isEmpty()) {
+            return ResponseEntity.ok(Map.of("message", "No heartbeat received yet"));
+        }
+
+        Map<String, Object> response = new HashMap<>(lastHeartbeat);
+
+        try {
+            Object timestampObj = lastHeartbeat.get("timestamp");
+
+            if (timestampObj != null) {
+                OffsetDateTime heartbeatTime = OffsetDateTime.parse(timestampObj.toString());
+                long secondsSinceLastHeartbeat =
+                        Duration.between(heartbeatTime, OffsetDateTime.now()).getSeconds();
+
+                response.put("secondsSinceLastHeartbeat", secondsSinceLastHeartbeat);
+
+                if (secondsSinceLastHeartbeat > 30) {
+                    response.put("status", "OFFLINE");
+                }
+            }
+        } catch (Exception ex) {
+            response.put("status", "UNKNOWN");
+            response.put("statusNote", "Unable to evaluate heartbeat freshness");
+        }
+
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/status")
