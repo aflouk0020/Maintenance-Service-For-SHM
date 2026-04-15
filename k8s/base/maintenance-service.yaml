@@ -23,6 +23,8 @@ spec:
           env:
             - name: SPRING_PROFILES_ACTIVE
               value: docker
+            - name: APP_JWT_SECRET
+              value: my-super-secure-jwt-secret-key-2026-smart-home-platform
             - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
               value: http://discovery-service:8761/eureka
             - name: EUREKA_INSTANCE_PREFER_IP_ADDRESS
