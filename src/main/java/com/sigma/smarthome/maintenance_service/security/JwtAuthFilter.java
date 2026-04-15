@@ -22,6 +22,14 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     public JwtAuthFilter(JwtService jwtService) {
         this.jwtService = jwtService;
     }
+    
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getServletPath();
+        return "POST".equalsIgnoreCase(request.getMethod())
+                && path != null
+                && path.startsWith("/api/v1/maintenance-requests/edge/");
+    }
 
     @Override
     protected void doFilterInternal(
